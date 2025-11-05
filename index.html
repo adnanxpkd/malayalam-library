@@ -681,6 +681,19 @@
         </div>
       `).join('');
     };
+    
+    // Example: /api/books.js (Node.js)
+    export default async function handler(req, res) {
+      const SUPABASE_URL = `https://pracyjeiwgecdmmxgrew.supabase.co/rest/v1/books?select=*`;
+      const SUPABASE_KEY = process.env.SUPABASE_KEY; // Store in env vars
+    
+      const response = await fetch(SUPABASE_URL, {
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` }
+      });
+    
+      const data = await response.json();
+      res.status(200).json(data);
+    }
 
     // Event Listeners
     elements.searchInput.addEventListener('input', applyFilters);
