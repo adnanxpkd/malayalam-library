@@ -6,19 +6,20 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "Backend not configured" });
   }
 
+  // read query params from frontend
   const { search = "", limit = 50, offset = 0 } = req.query;
 
   try {
-    // build query dynamically
+    // base query
     let url = `${SUPABASE_URL}/rest/v1/books?select=*`;
 
-    // search by file_name or caption (case-insensitive)
+    // if search term given
     if (search) {
-      const encodedSearch = encodeURIComponent(`%${search}%`);
-      url += `&or=(file_name.ilike.${encodedSearch},caption.ilike.${encodedSearch})`;
+      const encoded = encodeURIComponent(`%${search}%`);
+      url += `&or=(file_name.ilike.${encoded},caption.ilike.${encoded})`;
     }
 
-    // pagination
+    // add pagination
     url += `&limit=${limit}&offset=${offset}`;
 
     const response = await fetch(url, {
@@ -36,12 +37,8 @@ export default async function handler(req, res) {
 
     const data = await response.json();
 
-    // optional: count header for total available rows
-    const total = response.headers.get("content-range") || null;
-
     res.status(200).json({
       data,
-      total,
       limit: Number(limit),
       offset: Number(offset),
     });
