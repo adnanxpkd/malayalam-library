@@ -513,12 +513,11 @@
   </div>
 
   <script>
-    // Frontend config (safe to expose)
     const CONFIG = {
-      TG_BOT: 'alifdrivebot'
+      TG_BOT: 'alifdrivebot' // ← Update this if your bot username changes
     };
 
-    // Secure API endpoint (hosted on your server)
+    // Fetch from your secure backend API
     const API_URL = '/api/books';
 
     let allBooks = [];
@@ -568,9 +567,7 @@
       toast.setAttribute('aria-live', 'polite');
       toast.innerHTML = `<span>✓</span><span>${esc(message)}</span>`;
       document.body.appendChild(toast);
-      setTimeout(() => {
-        if (toast.parentNode) toast.parentNode.removeChild(toast);
-      }, 3000);
+      setTimeout(() => toast.remove(), 3000);
     };
 
     const copyLink = (id) => {
@@ -606,7 +603,7 @@
         elements.resultsHeader.style.display = 'flex';
         applyFilters();
       } catch (error) {
-        console.error('Fetch error:', error);
+        console.error('Error loading books:', error);
         elements.loadingEl.style.display = 'none';
         elements.errorEl.style.display = 'block';
       }
@@ -629,19 +626,14 @@
         return matchesSearch && matchesFilter;
       });
 
-      // Sorting
-      if (sortBy.startsWith('name')) {
-        filteredBooks.sort((a, b) => {
-          const nameA = (a.file_name || '').toLowerCase();
-          const nameB = (b.file_name || '').toLowerCase();
-          return sortBy === 'name_asc' ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
-        });
-      } else if (sortBy.startsWith('size')) {
-        filteredBooks.sort((a, b) => {
-          const sizeA = a.file_size || 0;
-          const sizeB = b.file_size || 0;
-          return sortBy === 'size_asc' ? sizeA - sizeB : sizeB - sizeA;
-        });
+      if (sortBy === 'name_asc') {
+        filteredBooks.sort((a, b) => (a.file_name || '').localeCompare(b.file_name || ''));
+      } else if (sortBy === 'name_desc') {
+        filteredBooks.sort((a, b) => (b.file_name || '').localeCompare(a.file_name || ''));
+      } else if (sortBy === 'size_asc') {
+        filteredBooks.sort((a, b) => (a.file_size || 0) - (b.file_size || 0));
+      } else if (sortBy === 'size_desc') {
+        filteredBooks.sort((a, b) => (b.file_size || 0) - (a.file_size || 0));
       }
 
       renderBooks();
@@ -652,11 +644,7 @@
       elements.resultsGrid.style.display = 'grid';
 
       if (filteredBooks.length === 0) {
-        elements.resultsGrid.innerHTML = `
-          <div class="empty">
-            📭<br><br>No books found matching your criteria
-          </div>
-        `;
+        elements.resultsGrid.innerHTML = '<div class="empty">📭<br><br>No books found matching your criteria</div>';
         return;
       }
 
@@ -696,7 +684,7 @@
       `).join('');
     };
 
-    // Event Listeners
+    // Event listeners
     elements.searchInput.addEventListener('input', applyFilters);
     elements.sortSelect.addEventListener('change', applyFilters);
     elements.clearBtn.addEventListener('click', () => {
@@ -709,9 +697,7 @@
       applyFilters();
     });
 
-    if (elements.retryBtn) {
-      elements.retryBtn.addEventListener('click', loadBooks);
-    }
+    if (elements.retryBtn) elements.retryBtn.addEventListener('click', loadBooks);
 
     document.querySelectorAll('.filter-chip').forEach(chip => {
       chip.addEventListener('click', () => {
