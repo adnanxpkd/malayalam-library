@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="ml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>📚 Malayalam Books Library</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root { 
+      --bg-primary: #0a0e16;
+      --bg-secondary: #0f1419;
+      --card-bg: #151b24;
+      --card-hover: #1a2130;
+      --border: #1e2937;
+      --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --accent-light: #1e40af;
+      --success: #10b981;
+      --gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    .header {
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      padding: 24px 0;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(12px);
+      background: rgba(15, 20, 25, 0.9);
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    .header-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-icon {
+      font-size: 32px;
+      filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.5));
+    }
+
+    .logo-text {
+      font-size: 24px;
+      font-weight: 700;
+      background: var(--gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .stats {
+      display: flex;
+      gap: 24px;
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    .stat-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .stat-value {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .search-section {
+      padding: 32px 0;
+    }
+
+    .search-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .search-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .search-input {
+      flex: 1;
+      min-width: 280px;
+      background: var(--card-bg);
+      border: 2px solid var(--border);
+      color: var(--text-primary);
+      padding: 14px 18px;
+      border-radius: 12px;
+      font-size: 15px;
+      transition: all 0.3s ease;
+      outline: none;
+    }
+
+    .search-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .search-input::placeholder {
+      color: var(--text-muted);
+    }
+
+    select, .btn {
+      background: var(--card-bg);
+      border: 2px solid var(--border);
+      color: var(--text-primary);
+      padding: 14px 18px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      outline: none;
+    }
+
+    select {
+      min-width: 160px;
+    }
+
+    .btn:hover, select:hover {
+      background: var(--card-hover);
+      border-color: var(--accent);
+    }
+
+    .btn:active {
+      transform: translateY(1px);
+    }
+
+    .filters {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .filter-chip {
+      padding: 8px 16px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      user-select: none;
+    }
+
+    .filter-chip:hover {
+      background: var(--card-hover);
+    }
+
+    .filter-chip.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+
+    .results-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 24px 0 16px;
+      padding: 0 4px;
+    }
+
+    .results-count {
+      color: var(--text-secondary);
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .view-toggle {
+      display: flex;
+      gap: 8px;
+      background: var(--card-bg);
+      padding: 4px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+
+    .view-btn {
+      padding: 8px 12px;
+      background: transparent;
+      border: none;
+      border-radius: 6px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 14px;
+    }
+
+    .view-btn.active {
+      background: var(--accent);
+      color: white;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+      padding-bottom: 40px;
+    }
+
+    .grid.grid-view {
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    }
+
+    @media (min-width: 768px) {
+      .grid.list-view {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--gradient);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .card:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    }
+
+    .card:hover::before {
+      opacity: 1;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: start;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .file-icon {
+      font-size: 28px;
+      flex-shrink: 0;
+    }
+
+    .card-title {
+      flex: 1;
+      font-weight: 600;
+      font-size: 16px;
+      line-height: 1.4;
+      word-break: break-word;
+      color: var(--text-primary);
+    }
+
+    .card-meta {
+      display: flex;
+      gap: 16px;
+      margin: 12px 0;
+      font-size: 13px;
+      color: var(--text-secondary);
+      flex-wrap: wrap;
+    }
+
+    .meta-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .caption {
+      color: var(--text-secondary);
+      font-size: 14px;
+      line-height: 1.5;
+      margin: 12px 0;
+      padding: 12px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+      white-space: pre-wrap;
+      max-height: 120px;
+      overflow-y: auto;
+    }
+
+    .caption::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .caption::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .caption::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 3px;
+    }
+
+    .card-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+
+    .btn-primary {
+      flex: 1;
+      min-width: 140px;
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-hover);
+      border-color: var(--accent-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+
+    .btn-secondary {
+      padding: 12px 18px;
+      background: transparent;
+      border: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .loading, .error, .empty {
+      padding: 80px 20px;
+      text-align: center;
+      color: var(--text-secondary);
+    }
+
+    .loading-spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 16px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .error {
+      color: #ef4444;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--success);
+      color: white;
+      padding: 16px 24px;
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      animation: slideIn 0.3s ease;
+      z-index: 1000;
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(400px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .header-content {
+        justify-content: center;
+      }
+      
+      .stats {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .search-input {
+        min-width: 100%;
+      }
+
+      .grid.grid-view {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="container">
+      <div class="header-content">
+        <div class="logo">
+          <span class="logo-icon">📚</span>
+          <span class="logo-text">Malayalam Books</span>
+        </div>
+        <div class="stats">
+          <div class="stat-item">
+            <span>📖</span>
+            <span id="totalBooks" class="stat-value">0</span>
+            <span>Books</span>
+          </div>
+          <div class="stat-item">
+            <span>💾</span>
+            <span id="totalSize" class="stat-value">0 GB</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="search-section">
+      <div class="search-controls">
+        <div class="search-row">
+          <input id="searchInput" class="search-input" placeholder="🔍 Search books by name or description..." />
+          <select id="sortSelect">
+            <option value="relevance">Sort: Relevance</option>
+            <option value="name_asc">Name (A → Z)</option>
+            <option value="name_desc">Name (Z → A)</option>
+            <option value="size_desc">Size (Large → Small)</option>
+            <option value="size_asc">Size (Small → Large)</option>
+          </select>
+          <button id="clearBtn" class="btn">🔄 Clear</button>
+        </div>
+        <div class="filters">
+          <div class="filter-chip active" data-filter="all">All Books</div>
+          <div class="filter-chip" data-filter="pdf">📄 PDF</div>
+          <div class="filter-chip" data-filter="epub">📱 EPUB</div>
+          <div class="filter-chip" data-filter="large">💎 Large Files</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="results-header" id="resultsHeader" style="display:none">
+      <div class="results-count" id="resultsCount">0 results</div>
+      <div class="view-toggle">
+        <button class="view-btn active" data-view="grid">⊞ Grid</button>
+        <button class="view-btn" data-view="list">☰ List</button>
+      </div>
+    </div>
+
+    <div id="loadingEl" class="loading">
+      <div class="loading-spinner"></div>
+      <div>Loading Malayalam books collection...</div>
+    </div>
+
+    <div id="errorEl" class="error" style="display:none">
+      <div style="font-size:48px;margin-bottom:16px">⚠️</div>
+      <div style="font-size:18px;font-weight:600;margin-bottom:8px">Unable to load data</div>
+      <div>Please check your connection and try again</div>
+    </div>
+
+    <div id="resultsGrid" class="grid grid-view" style="display:none"></div>
+  </div>
+
+  <script>
+    const CONFIG = {
+      PROJECT_REF: 'pracyjeiwgecdmmxgrew',
+      SUPABASE_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InByYWN5amVpd2dlY2RtbXhncmV3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIzNTg4OTAsImV4cCI6MjA3NzkzNDg5MH0.ms_j25yUwMXDtwGk9J-bRfHhEKbEE0M4yRBxnyIEZQ4',
+      TG_BOT: 'alifdrivebot'
+    };
+
+    const SUPABASE_URL = `https://${CONFIG.PROJECT_REF}.supabase.co/rest/v1/books?select=*`;
+
+    let allBooks = [];
+    let filteredBooks = [];
+    let currentFilter = 'all';
+    let currentView = 'grid';
+
+    const elements = {
+      searchInput: document.getElementById('searchInput'),
+      sortSelect: document.getElementById('sortSelect'),
+      clearBtn: document.getElementById('clearBtn'),
+      loadingEl: document.getElementById('loadingEl'),
+      errorEl: document.getElementById('errorEl'),
+      resultsGrid: document.getElementById('resultsGrid'),
+      resultsHeader: document.getElementById('resultsHeader'),
+      resultsCount: document.getElementById('resultsCount'),
+      totalBooks: document.getElementById('totalBooks'),
+      totalSize: document.getElementById('totalSize')
+    };
+
+    const formatSize = (bytes) => {
+      const mb = bytes / 1024 / 1024;
+      return mb >= 1000 ? `${(mb / 1024).toFixed(2)} GB` : `${mb.toFixed(2)} MB`;
+    };
+
+    const esc = (str) => (str || '').replace(/[&<>"']/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+
+    const getFileIcon = (mimeType) => {
+      if (!mimeType) return '📄';
+      if (mimeType.includes('pdf')) return '📕';
+      if (mimeType.includes('epub')) return '📱';
+      if (mimeType.includes('text')) return '📝';
+      return '📄';
+    };
+
+    const showToast = (message) => {
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.innerHTML = `<span>✓</span><span>${esc(message)}</span>`;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    };
+
+    const copyLink = (id) => {
+      const url = `https://t.me/${CONFIG.TG_BOT}?start=filep_${id}`;
+      navigator.clipboard.writeText(url).then(() => {
+        showToast('Link copied to clipboard!');
+      });
+    };
+
+    const loadBooks = async () => {
+      try {
+        const response = await fetch(SUPABASE_URL, {
+          method: 'GET',
+          headers: {
+            'apikey': CONFIG.SUPABASE_KEY,
+            'Authorization': `Bearer ${CONFIG.SUPABASE_KEY}`,
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) throw new Error('Failed to fetch');
+
+        allBooks = await response.json();
+        
+        const totalSize = allBooks.reduce((sum, book) => sum + (book.file_size || 0), 0);
+        elements.totalBooks.textContent = allBooks.length.toLocaleString();
+        elements.totalSize.textContent = formatSize(totalSize);
+
+        elements.loadingEl.style.display = 'none';
+        elements.resultsHeader.style.display = 'flex';
+        applyFilters();
+      } catch (error) {
+        console.error('Error loading books:', error);
+        elements.loadingEl.style.display = 'none';
+        elements.errorEl.style.display = 'block';
+      }
+    };
+
+    const applyFilters = () => {
+      const query = elements.searchInput.value.trim().toLowerCase();
+      const sortBy = elements.sortSelect.value;
+
+      filteredBooks = allBooks.filter(book => {
+        const matchesSearch = !query || 
+          (book.file_name && book.file_name.toLowerCase().includes(query)) ||
+          (book.caption && book.caption.toLowerCase().includes(query));
+
+        const matchesFilter = currentFilter === 'all' ||
+          (currentFilter === 'pdf' && book.mime_type?.includes('pdf')) ||
+          (currentFilter === 'epub' && book.mime_type?.includes('epub')) ||
+          (currentFilter === 'large' && book.file_size > 50 * 1024 * 1024);
+
+        return matchesSearch && matchesFilter;
+      });
+
+      if (sortBy === 'name_asc') {
+        filteredBooks.sort((a, b) => a.file_name.localeCompare(b.file_name));
+      } else if (sortBy === 'name_desc') {
+        filteredBooks.sort((a, b) => b.file_name.localeCompare(a.file_name));
+      } else if (sortBy === 'size_asc') {
+        filteredBooks.sort((a, b) => (a.file_size || 0) - (b.file_size || 0));
+      } else if (sortBy === 'size_desc') {
+        filteredBooks.sort((a, b) => (b.file_size || 0) - (a.file_size || 0));
+      }
+
+      renderBooks();
+    };
+
+    const renderBooks = () => {
+      elements.resultsCount.textContent = `${filteredBooks.length.toLocaleString()} result${filteredBooks.length !== 1 ? 's' : ''}`;
+      elements.resultsGrid.style.display = 'grid';
+
+      if (filteredBooks.length === 0) {
+        elements.resultsGrid.innerHTML = '<div class="empty">📭<br><br>No books found matching your criteria</div>';
+        return;
+      }
+
+      elements.resultsGrid.innerHTML = filteredBooks.map(book => `
+        <div class="card">
+          <div class="card-header">
+            <span class="file-icon">${getFileIcon(book.mime_type)}</span>
+            <h3 class="card-title">${esc(book.file_name)}</h3>
+          </div>
+          <div class="card-meta">
+            <div class="meta-item">
+              <span>💾</span>
+              <span>${formatSize(book.file_size)}</span>
+            </div>
+            ${book.mime_type ? `
+              <div class="meta-item">
+                <span>📋</span>
+                <span>${esc(book.mime_type.split('/')[1]?.toUpperCase() || 'FILE')}</span>
+              </div>
+            ` : ''}
+          </div>
+          ${book.caption ? `<div class="caption">${esc(book.caption)}</div>` : ''}
+          <div class="card-actions">
+            <a class="btn btn-primary" target="_blank" 
+               href="https://t.me/${CONFIG.TG_BOT}?start=filep_${encodeURIComponent(book._id)}">
+              📥 Get on Telegram
+            </a>
+            <button class="btn btn-secondary" onclick="copyLink('${book._id}')">
+              🔗 Copy Link
+            </button>
+          </div>
+        </div>
+      `).join('');
+    };
+
+    elements.searchInput.addEventListener('input', applyFilters);
+    elements.sortSelect.addEventListener('change', applyFilters);
+    elements.clearBtn.addEventListener('click', () => {
+      elements.searchInput.value = '';
+      elements.sortSelect.value = 'relevance';
+      currentFilter = 'all';
+      document.querySelectorAll('.filter-chip').forEach(chip => {
+        chip.classList.toggle('active', chip.dataset.filter === 'all');
+      });
+      applyFilters();
+    });
+
+    document.querySelectorAll('.filter-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        currentFilter = chip.dataset.filter;
+        applyFilters();
+      });
+    });
+
+    document.querySelectorAll('.view-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentView = btn.dataset.view;
+        elements.resultsGrid.className = `grid ${currentView}-view`;
+      });
+    });
+
+    window.copyLink = copyLink;
+    loadBooks();
+  </script>
+</body>
+</html>
