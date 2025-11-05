@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="ml">
 <head>
   <meta charset="utf-8" />
@@ -507,6 +506,7 @@
       <div style="font-size:48px;margin-bottom:16px">⚠️</div>
       <div style="font-size:18px;font-weight:600;margin-bottom:8px">Unable to load data</div>
       <div>Please check your connection and try again</div>
+      <button id="retryBtn" class="btn" style="margin-top:16px">↻ Retry</button>
     </div>
 
     <div id="resultsGrid" class="grid grid-view" style="display:none"></div>
@@ -514,12 +514,11 @@
 
   <script>
     const CONFIG = {
-      PROJECT_REF: 'pracyjeiwgecdmmxgrew',
-      SUPABASE_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InByYWN5amVpd2dlY2RtbXhncmV3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIzNTg4OTAsImV4cCI6MjA3NzkzNDg5MH0.ms_j25yUwMXDtwGk9J-bRfHhEKbEE0M4yRBxnyIEZQ4',
       TG_BOT: 'alifdrivebot'
     };
 
-    const SUPABASE_URL = `https://${CONFIG.PROJECT_REF}.supabase.co/rest/v1/books?select=*`;
+    // ✅ Secure: Now fetches from your own backend proxy
+    const API_URL = '/api/books';
 
     let allBooks = [];
     let filteredBooks = [];
@@ -530,6 +529,7 @@
       searchInput: document.getElementById('searchInput'),
       sortSelect: document.getElementById('sortSelect'),
       clearBtn: document.getElementById('clearBtn'),
+      retryBtn: document.getElementById('retryBtn'),
       loadingEl: document.getElementById('loadingEl'),
       errorEl: document.getElementById('errorEl'),
       resultsGrid: document.getElementById('resultsGrid'),
@@ -540,12 +540,15 @@
     };
 
     const formatSize = (bytes) => {
+      if (!bytes) return '0 KB';
       const mb = bytes / 1024 / 1024;
-      return mb >= 1000 ? `${(mb / 1024).toFixed(2)} GB` : `${mb.toFixed(2)} MB`;
+      if (mb >= 1000) return `${(mb / 1024).toFixed(2)} GB`;
+      if (mb >= 1) return `${mb.toFixed(2)} MB`;
+      return `${(bytes / 1024).toFixed(2)} KB`;
     };
 
     const esc = (str) => (str || '').replace(/[&<>"']/g, c => ({
-      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      '&': '&amp;', '<': '<', '>': '>', '"': '&quot;', "'": '&#39;'
     }[c]));
 
     const getFileIcon = (mimeType) => {
@@ -559,6 +562,7 @@
     const showToast = (message) => {
       const toast = document.createElement('div');
       toast.className = 'toast';
+      toast.setAttribute('role', 'status');
       toast.innerHTML = `<span>✓</span><span>${esc(message)}</span>`;
       document.body.appendChild(toast);
       setTimeout(() => toast.remove(), 3000);
@@ -568,22 +572,25 @@
       const url = `https://t.me/${CONFIG.TG_BOT}?start=filep_${id}`;
       navigator.clipboard.writeText(url).then(() => {
         showToast('Link copied to clipboard!');
+      }).catch(err => {
+        console.error('Copy failed:', err);
+        showToast('Failed to copy link.');
       });
     };
 
     const loadBooks = async () => {
+      elements.loadingEl.style.display = 'block';
+      elements.errorEl.style.display = 'none';
+      elements.resultsGrid.style.display = 'none';
+      elements.resultsHeader.style.display = 'none';
+
       try {
-        const response = await fetch(SUPABASE_URL, {
+        const response = await fetch(API_URL, {
           method: 'GET',
-          headers: {
-            'apikey': CONFIG.SUPABASE_KEY,
-            'Authorization': `Bearer ${CONFIG.SUPABASE_KEY}`,
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-          }
+          headers: { 'Accept': 'application/json' }
         });
 
-        if (!response.ok) throw new Error('Failed to fetch');
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
         allBooks = await response.json();
         
@@ -619,9 +626,9 @@
       });
 
       if (sortBy === 'name_asc') {
-        filteredBooks.sort((a, b) => a.file_name.localeCompare(b.file_name));
+        filteredBooks.sort((a, b) => (a.file_name || '').localeCompare(b.file_name || ''));
       } else if (sortBy === 'name_desc') {
-        filteredBooks.sort((a, b) => b.file_name.localeCompare(a.file_name));
+        filteredBooks.sort((a, b) => (b.file_name || '').localeCompare(a.file_name || ''));
       } else if (sortBy === 'size_asc') {
         filteredBooks.sort((a, b) => (a.file_size || 0) - (b.file_size || 0));
       } else if (sortBy === 'size_desc') {
@@ -641,30 +648,33 @@
       }
 
       elements.resultsGrid.innerHTML = filteredBooks.map(book => `
-        <div class="card">
+        <div class="card" role="article">
           <div class="card-header">
-            <span class="file-icon">${getFileIcon(book.mime_type)}</span>
+            <span class="file-icon" aria-hidden="true">${getFileIcon(book.mime_type)}</span>
             <h3 class="card-title">${esc(book.file_name)}</h3>
           </div>
           <div class="card-meta">
             <div class="meta-item">
-              <span>💾</span>
+              <span aria-hidden="true">💾</span>
               <span>${formatSize(book.file_size)}</span>
             </div>
             ${book.mime_type ? `
               <div class="meta-item">
-                <span>📋</span>
+                <span aria-hidden="true">📋</span>
                 <span>${esc(book.mime_type.split('/')[1]?.toUpperCase() || 'FILE')}</span>
               </div>
             ` : ''}
           </div>
           ${book.caption ? `<div class="caption">${esc(book.caption)}</div>` : ''}
           <div class="card-actions">
-            <a class="btn btn-primary" target="_blank" 
-               href="https://t.me/${CONFIG.TG_BOT}?start=filep_${encodeURIComponent(book._id)}">
+            <a class="btn btn-primary" target="_blank" rel="noopener noreferrer"
+               href="https://t.me/${CONFIG.TG_BOT}?start=filep_${encodeURIComponent(book._id)}"
+               aria-label="Get ${esc(book.file_name)} on Telegram">
               📥 Get on Telegram
             </a>
-            <button class="btn btn-secondary" onclick="copyLink('${book._id}')">
+            <button class="btn btn-secondary" 
+                    aria-label="Copy link for ${esc(book.file_name)}"
+                    onclick="copyLink('${book._id}')">
               🔗 Copy Link
             </button>
           </div>
@@ -672,6 +682,7 @@
       `).join('');
     };
 
+    // Event Listeners
     elements.searchInput.addEventListener('input', applyFilters);
     elements.sortSelect.addEventListener('change', applyFilters);
     elements.clearBtn.addEventListener('click', () => {
@@ -683,6 +694,8 @@
       });
       applyFilters();
     });
+
+    elements.retryBtn?.addEventListener('click', loadBooks);
 
     document.querySelectorAll('.filter-chip').forEach(chip => {
       chip.addEventListener('click', () => {
@@ -702,7 +715,10 @@
       });
     });
 
+    // Expose copyLink globally for onclick handlers
     window.copyLink = copyLink;
+
+    // Load on start
     loadBooks();
   </script>
 </body>
