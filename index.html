@@ -512,213 +512,251 @@
     <div id="resultsGrid" class="grid grid-view" style="display:none"></div>
   </div>
 
-  <script>
-    const CONFIG = {
-      TG_BOT: 'alifdrivebot' // ← Update this if your bot username changes
-    };
+  <script>const CONFIG = { TG_BOT: 'alifdrivebot' };
+const API_URL = '/api/books';
 
-    // Fetch from your secure backend API
-    const API_URL = '/api/books';
+let allBooks = [];
+let filteredBooks = [];
+let currentFilter = 'all';
+let currentView = 'grid';
 
-    let allBooks = [];
-    let filteredBooks = [];
-    let currentFilter = 'all';
-    let currentView = 'grid';
+// new: paging state
+const PAGE_SIZE = 50; // tweak if you want
+let page = 0;
+let isLoadingMore = false;
 
-    const elements = {
-      searchInput: document.getElementById('searchInput'),
-      sortSelect: document.getElementById('sortSelect'),
-      clearBtn: document.getElementById('clearBtn'),
-      retryBtn: document.getElementById('retryBtn'),
-      loadingEl: document.getElementById('loadingEl'),
-      errorEl: document.getElementById('errorEl'),
-      resultsGrid: document.getElementById('resultsGrid'),
-      resultsHeader: document.getElementById('resultsHeader'),
-      resultsCount: document.getElementById('resultsCount'),
-      totalBooks: document.getElementById('totalBooks'),
-      totalSize: document.getElementById('totalSize')
-    };
+const elements = {
+  searchInput: document.getElementById('searchInput'),
+  sortSelect: document.getElementById('sortSelect'),
+  clearBtn: document.getElementById('clearBtn'),
+  retryBtn: document.getElementById('retryBtn'),
+  loadingEl: document.getElementById('loadingEl'),
+  errorEl: document.getElementById('errorEl'),
+  resultsGrid: document.getElementById('resultsGrid'),
+  resultsHeader: document.getElementById('resultsHeader'),
+  resultsCount: document.getElementById('resultsCount'),
+  totalBooks: document.getElementById('totalBooks'),
+  totalSize: document.getElementById('totalSize'),
+  sentinel: document.getElementById('sentinel')
+};
 
-    const formatSize = (bytes) => {
-      if (!bytes || bytes === 0) return '0 KB';
-      if (bytes < 1024) return `${bytes} B`;
-      if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(2)} KB`;
-      if (bytes < 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
-      return `${(bytes / 1024 / 1024 / 1024).toFixed(2)} GB`;
-    };
+const formatSize = (bytes) => {
+  if (!bytes || bytes === 0) return '0 KB';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(2)} KB`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
+  return `${(bytes / 1024 / 1024 / 1024).toFixed(2)} GB`;
+};
 
-    const esc = (str) => (str || '').replace(/[&<>"']/g, c => ({
-      '&': '&amp;', '<': '<', '>': '>', '"': '&quot;', "'": '&#39;'
-    }[c]));
+const esc = (str) => (str || '').replace(/[&<>"']/g, c => ({
+  '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+}[c]));
 
-    const getFileIcon = (mimeType) => {
-      if (!mimeType) return '📄';
-      mimeType = mimeType.toLowerCase();
-      if (mimeType.includes('pdf')) return '📕';
-      if (mimeType.includes('epub')) return '📱';
-      if (mimeType.includes('text')) return '📝';
-      return '📄';
-    };
+const getFileIcon = (mimeType) => {
+  if (!mimeType) return '📄';
+  mimeType = mimeType.toLowerCase();
+  if (mimeType.includes('pdf')) return '📕';
+  if (mimeType.includes('epub')) return '📱';
+  if (mimeType.includes('text')) return '📝';
+  return '📄';
+};
 
-    const showToast = (message) => {
-      const toast = document.createElement('div');
-      toast.className = 'toast';
-      toast.setAttribute('role', 'status');
-      toast.setAttribute('aria-live', 'polite');
-      toast.innerHTML = `<span>✓</span><span>${esc(message)}</span>`;
-      document.body.appendChild(toast);
-      setTimeout(() => toast.remove(), 3000);
-    };
+const showToast = (message) => {
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.setAttribute('role', 'status');
+  toast.setAttribute('aria-live', 'polite');
+  toast.innerHTML = `<span>✓</span><span>${esc(message)}</span>`;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
+};
 
-    const copyLink = (id) => {
-      const url = `https://t.me/${CONFIG.TG_BOT}?start=filep_${id}`;
-      navigator.clipboard.writeText(url).then(() => {
-        showToast('Link copied to clipboard!');
-      }).catch(() => {
-        showToast('Failed to copy link.');
-      });
-    };
+const copyLink = (id) => {
+  const url = `https://t.me/${CONFIG.TG_BOT}?start=filep_${id}`;
+  navigator.clipboard.writeText(url).then(() => {
+    showToast('Link copied to clipboard!');
+  }).catch(() => {
+    showToast('Failed to copy link.');
+  });
+};
+window.copyLink = copyLink;
 
-    const loadBooks = async () => {
-      elements.loadingEl.style.display = 'block';
-      elements.errorEl.style.display = 'none';
-      elements.resultsGrid.style.display = 'none';
-      elements.resultsHeader.style.display = 'none';
+const loadBooks = async () => {
+  elements.loadingEl.style.display = 'block';
+  elements.errorEl.style.display = 'none';
+  elements.resultsGrid.style.display = 'none';
+  elements.resultsHeader.style.display = 'none';
 
-      try {
-        const response = await fetch(API_URL, {
-          method: 'GET',
-          headers: { 'Accept': 'application/json' }
-        });
+  try {
+    const response = await fetch(API_URL, { method: 'GET', headers: { 'Accept': 'application/json' } });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    allBooks = await response.json();
 
-        allBooks = await response.json();
-        
-        const totalSize = allBooks.reduce((sum, book) => sum + (book.file_size || 0), 0);
-        elements.totalBooks.textContent = allBooks.length.toLocaleString();
-        elements.totalSize.textContent = formatSize(totalSize);
+    const totalSize = allBooks.reduce((sum, book) => sum + (book.file_size || 0), 0);
+    elements.totalBooks.textContent = allBooks.length.toLocaleString();
+    elements.totalSize.textContent = formatSize(totalSize);
 
-        elements.loadingEl.style.display = 'none';
-        elements.resultsHeader.style.display = 'flex';
-        applyFilters();
-      } catch (error) {
-        console.error('Error loading books:', error);
-        elements.loadingEl.style.display = 'none';
-        elements.errorEl.style.display = 'block';
-      }
-    };
+    elements.loadingEl.style.display = 'none';
+    elements.resultsHeader.style.display = 'flex';
+    applyFilters(true); // true → reset paging
+  } catch (error) {
+    console.error('Error loading books:', error);
+    elements.loadingEl.style.display = 'none';
+    elements.errorEl.style.display = 'block';
+  }
+};
 
-    const applyFilters = () => {
-      const query = elements.searchInput.value.trim().toLowerCase();
-      const sortBy = elements.sortSelect.value;
+// build one card
+const renderCard = (book) => `
+  <div class="card" role="article">
+    <div class="card-header">
+      <span class="file-icon" aria-hidden="true">${getFileIcon(book.mime_type)}</span>
+      <h3 class="card-title">${esc(book.file_name)}</h3>
+    </div>
+    <div class="card-meta">
+      <div class="meta-item">
+        <span aria-hidden="true">💾</span>
+        <span>${formatSize(book.file_size)}</span>
+      </div>
+      ${book.mime_type ? `
+        <div class="meta-item">
+          <span aria-hidden="true">📋</span>
+          <span>${esc(book.mime_type.split('/')[1]?.toUpperCase() || 'FILE')}</span>
+        </div>` : ''}
+    </div>
+    ${book.caption ? `<div class="caption">${esc(book.caption)}</div>` : ''}
+    <div class="card-actions">
+      <a class="btn btn-primary"
+         href="https://t.me/${CONFIG.TG_BOT}?start=filep_${encodeURIComponent(book._id)}"
+         target="_blank" rel="noopener noreferrer"
+         aria-label="Get ${esc(book.file_name)} on Telegram">
+        📥 Get on Telegram
+      </a>
+      <button class="btn btn-secondary"
+              aria-label="Copy link for ${esc(book.file_name)}"
+              onclick="copyLink('${book._id}')">
+        🔗 Copy Link
+      </button>
+    </div>
+  </div>
+`;
 
-      filteredBooks = allBooks.filter(book => {
-        const nameMatch = book.file_name?.toLowerCase().includes(query) || false;
-        const captionMatch = book.caption?.toLowerCase().includes(query) || false;
-        const matchesSearch = !query || nameMatch || captionMatch;
+// render first page (or append next page)
+const renderPage = () => {
+  const start = page * PAGE_SIZE;
+  const end = Math.min(start + PAGE_SIZE, filteredBooks.length);
+  const slice = filteredBooks.slice(start, end);
 
-        const matchesFilter = currentFilter === 'all' ||
-          (currentFilter === 'pdf' && book.mime_type?.toLowerCase().includes('pdf')) ||
-          (currentFilter === 'epub' && book.mime_type?.toLowerCase().includes('epub')) ||
-          (currentFilter === 'large' && book.file_size > 50 * 1024 * 1024);
+  if (page === 0) {
+    // first render
+    if (filteredBooks.length === 0) {
+      elements.resultsGrid.innerHTML = '<div class="empty">📭<br><br>No books found matching your criteria</div>';
+    } else {
+      elements.resultsGrid.innerHTML = slice.map(renderCard).join('');
+    }
+    elements.resultsGrid.style.display = 'grid';
+  } else {
+    // append
+    const frag = document.createElement('div');
+    frag.innerHTML = slice.map(renderCard).join('');
+    while (frag.firstChild) elements.resultsGrid.appendChild(frag.firstChild);
+  }
 
-        return matchesSearch && matchesFilter;
-      });
+  const shown = end;
+  elements.resultsCount.textContent = `Showing ${shown.toLocaleString()} of ${filteredBooks.length.toLocaleString()} results`;
+};
 
-      if (sortBy === 'name_asc') {
-        filteredBooks.sort((a, b) => (a.file_name || '').localeCompare(b.file_name || ''));
-      } else if (sortBy === 'name_desc') {
-        filteredBooks.sort((a, b) => (b.file_name || '').localeCompare(a.file_name || ''));
-      } else if (sortBy === 'size_asc') {
-        filteredBooks.sort((a, b) => (a.file_size || 0) - (b.file_size || 0));
-      } else if (sortBy === 'size_desc') {
-        filteredBooks.sort((a, b) => (b.file_size || 0) - (a.file_size || 0));
-      }
+// infinite scroll observer
+const io = new IntersectionObserver(async (entries) => {
+  const last = entries[0];
+  if (!last.isIntersecting) return;
+  if (isLoadingMore) return;
+  const totalPages = Math.ceil(filteredBooks.length / PAGE_SIZE);
+  if (page + 1 >= totalPages) return; // nothing more
 
-      renderBooks();
-    };
+  isLoadingMore = true;
+  page += 1;
+  renderPage();
+  isLoadingMore = false;
+}, { rootMargin: '800px' }); // prefetch earlier
 
-    const renderBooks = () => {
-      elements.resultsCount.textContent = `${filteredBooks.length.toLocaleString()} result${filteredBooks.length !== 1 ? 's' : ''}`;
-      elements.resultsGrid.style.display = 'grid';
+const applyFilters = (resetPaging = false) => {
+  const query = elements.searchInput.value.trim().toLowerCase();
+  const sortBy = elements.sortSelect.value;
 
-      if (filteredBooks.length === 0) {
-        elements.resultsGrid.innerHTML = '<div class="empty">📭<br><br>No books found matching your criteria</div>';
-        return;
-      }
+  filteredBooks = allBooks.filter(book => {
+    const nameMatch = book.file_name?.toLowerCase().includes(query) || false;
+    const captionMatch = book.caption?.toLowerCase().includes(query) || false;
+    const matchesSearch = !query || nameMatch || captionMatch;
 
-      elements.resultsGrid.innerHTML = filteredBooks.map(book => `
-        <div class="card" role="article">
-          <div class="card-header">
-            <span class="file-icon" aria-hidden="true">${getFileIcon(book.mime_type)}</span>
-            <h3 class="card-title">${esc(book.file_name)}</h3>
-          </div>
-          <div class="card-meta">
-            <div class="meta-item">
-              <span aria-hidden="true">💾</span>
-              <span>${formatSize(book.file_size)}</span>
-            </div>
-            ${book.mime_type ? `
-              <div class="meta-item">
-                <span aria-hidden="true">📋</span>
-                <span>${esc(book.mime_type.split('/')[1]?.toUpperCase() || 'FILE')}</span>
-              </div>
-            ` : ''}
-          </div>
-          ${book.caption ? `<div class="caption">${esc(book.caption)}</div>` : ''}
-          <div class="card-actions">
-            <a class="btn btn-primary"
-               href="https://t.me/${CONFIG.TG_BOT}?start=filep_${encodeURIComponent(book._id)}"
-               target="_blank" rel="noopener noreferrer"
-               aria-label="Get ${esc(book.file_name)} on Telegram">
-              📥 Get on Telegram
-            </a>
-            <button class="btn btn-secondary"
-                    aria-label="Copy link for ${esc(book.file_name)}"
-                    onclick="copyLink('${book._id}')">
-              🔗 Copy Link
-            </button>
-          </div>
-        </div>
-      `).join('');
-    };
+    const matchesFilter = currentFilter === 'all' ||
+      (currentFilter === 'pdf' && book.mime_type?.toLowerCase().includes('pdf')) ||
+      (currentFilter === 'epub' && book.mime_type?.toLowerCase().includes('epub')) ||
+      (currentFilter === 'large' && book.file_size > 50 * 1024 * 1024);
 
-    // Event listeners
-    elements.searchInput.addEventListener('input', applyFilters);
-    elements.sortSelect.addEventListener('change', applyFilters);
-    elements.clearBtn.addEventListener('click', () => {
-      elements.searchInput.value = '';
-      elements.sortSelect.value = 'relevance';
-      currentFilter = 'all';
-      document.querySelectorAll('.filter-chip').forEach(chip => {
-        chip.classList.toggle('active', chip.dataset.filter === 'all');
-      });
-      applyFilters();
-    });
+    return matchesSearch && matchesFilter;
+  });
 
-    if (elements.retryBtn) elements.retryBtn.addEventListener('click', loadBooks);
+  if (sortBy === 'name_asc') {
+    filteredBooks.sort((a, b) => (a.file_name || '').localeCompare(b.file_name || ''));
+  } else if (sortBy === 'name_desc') {
+    filteredBooks.sort((a, b) => (b.file_name || '').localeCompare(a.file_name || ''));
+  } else if (sortBy === 'size_asc') {
+    filteredBooks.sort((a, b) => (a.file_size || 0) - (b.file_size || 0));
+  } else if (sortBy === 'size_desc') {
+    filteredBooks.sort((a, b) => (b.file_size || 0) - (a.file_size || 0));
+  }
 
-    document.querySelectorAll('.filter-chip').forEach(chip => {
-      chip.addEventListener('click', () => {
-        document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
-        chip.classList.add('active');
-        currentFilter = chip.dataset.filter;
-        applyFilters();
-      });
-    });
+  // reset paging if needed
+  if (resetPaging) page = 0;
+  renderPage();
 
-    document.querySelectorAll('.view-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        currentView = btn.dataset.view;
-        elements.resultsGrid.className = `grid ${currentView}-view`;
-      });
-    });
+  // manage observer
+  io.disconnect();
+  const moreLeft = (page + 1) * PAGE_SIZE < filteredBooks.length;
+  if (moreLeft && elements.sentinel) io.observe(elements.sentinel);
+};
 
-    window.copyLink = copyLink;
-    loadBooks();
+// simple debounce for search typing
+let t;
+elements.searchInput.addEventListener('input', () => {
+  clearTimeout(t);
+  t = setTimeout(() => applyFilters(true), 200);
+});
+elements.sortSelect.addEventListener('change', () => applyFilters(true));
+elements.clearBtn.addEventListener('click', () => {
+  elements.searchInput.value = '';
+  elements.sortSelect.value = 'relevance';
+  currentFilter = 'all';
+  document.querySelectorAll('.filter-chip').forEach(chip => {
+    chip.classList.toggle('active', chip.dataset.filter === 'all');
+  });
+  applyFilters(true);
+});
+
+if (elements.retryBtn) elements.retryBtn.addEventListener('click', loadBooks);
+
+document.querySelectorAll('.filter-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    currentFilter = chip.dataset.filter;
+    applyFilters(true);
+  });
+});
+
+document.querySelectorAll('.view-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentView = btn.dataset.view;
+    elements.resultsGrid.className = `grid ${currentView}-view`;
+  });
+});
+
+loadBooks();
+
   </script>
 </body>
 </html>
