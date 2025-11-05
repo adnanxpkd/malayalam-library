@@ -1,10 +1,9 @@
-// api/books.js
 export default async function handler(req, res) {
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY;
 
   if (!SUPABASE_URL || !SUPABASE_KEY) {
-    return res.status(500).json({ error: 'Backend misconfigured' });
+    return res.status(500).json({ error: "Backend not configured" });
   }
 
   try {
@@ -16,11 +15,13 @@ export default async function handler(req, res) {
       }
     });
 
-    if (!response.ok) throw new Error('Supabase fetch failed');
+    if (!response.ok) {
+      return res.status(500).json({ error: "Failed to fetch from Supabase" });
+    }
 
     const data = await response.json();
     res.status(200).json(data);
   } catch (err) {
-    res.status(500).json({ error: 'Failed to load books' });
+    res.status(500).json({ error: "Server error" });
   }
 }
