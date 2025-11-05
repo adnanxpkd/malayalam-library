@@ -513,11 +513,12 @@
   </div>
 
   <script>
+    // Frontend config (safe to expose)
     const CONFIG = {
       TG_BOT: 'alifdrivebot'
     };
 
-    // ✅ Secure: Now fetches from your own backend proxy
+    // Secure API endpoint (hosted on your server)
     const API_URL = '/api/books';
 
     let allBooks = [];
@@ -540,11 +541,11 @@
     };
 
     const formatSize = (bytes) => {
-      if (!bytes) return '0 KB';
-      const mb = bytes / 1024 / 1024;
-      if (mb >= 1000) return `${(mb / 1024).toFixed(2)} GB`;
-      if (mb >= 1) return `${mb.toFixed(2)} MB`;
-      return `${(bytes / 1024).toFixed(2)} KB`;
+      if (!bytes || bytes === 0) return '0 KB';
+      if (bytes < 1024) return `${bytes} B`;
+      if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(2)} KB`;
+      if (bytes < 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
+      return `${(bytes / 1024 / 1024 / 1024).toFixed(2)} GB`;
     };
 
     const esc = (str) => (str || '').replace(/[&<>"']/g, c => ({
@@ -553,6 +554,7 @@
 
     const getFileIcon = (mimeType) => {
       if (!mimeType) return '📄';
+      mimeType = mimeType.toLowerCase();
       if (mimeType.includes('pdf')) return '📕';
       if (mimeType.includes('epub')) return '📱';
       if (mimeType.includes('text')) return '📝';
@@ -563,17 +565,19 @@
       const toast = document.createElement('div');
       toast.className = 'toast';
       toast.setAttribute('role', 'status');
+      toast.setAttribute('aria-live', 'polite');
       toast.innerHTML = `<span>✓</span><span>${esc(message)}</span>`;
       document.body.appendChild(toast);
-      setTimeout(() => toast.remove(), 3000);
+      setTimeout(() => {
+        if (toast.parentNode) toast.parentNode.removeChild(toast);
+      }, 3000);
     };
 
     const copyLink = (id) => {
       const url = `https://t.me/${CONFIG.TG_BOT}?start=filep_${id}`;
       navigator.clipboard.writeText(url).then(() => {
         showToast('Link copied to clipboard!');
-      }).catch(err => {
-        console.error('Copy failed:', err);
+      }).catch(() => {
         showToast('Failed to copy link.');
       });
     };
@@ -602,7 +606,7 @@
         elements.resultsHeader.style.display = 'flex';
         applyFilters();
       } catch (error) {
-        console.error('Error loading books:', error);
+        console.error('Fetch error:', error);
         elements.loadingEl.style.display = 'none';
         elements.errorEl.style.display = 'block';
       }
@@ -613,26 +617,31 @@
       const sortBy = elements.sortSelect.value;
 
       filteredBooks = allBooks.filter(book => {
-        const matchesSearch = !query || 
-          (book.file_name && book.file_name.toLowerCase().includes(query)) ||
-          (book.caption && book.caption.toLowerCase().includes(query));
+        const nameMatch = book.file_name?.toLowerCase().includes(query) || false;
+        const captionMatch = book.caption?.toLowerCase().includes(query) || false;
+        const matchesSearch = !query || nameMatch || captionMatch;
 
         const matchesFilter = currentFilter === 'all' ||
-          (currentFilter === 'pdf' && book.mime_type?.includes('pdf')) ||
-          (currentFilter === 'epub' && book.mime_type?.includes('epub')) ||
+          (currentFilter === 'pdf' && book.mime_type?.toLowerCase().includes('pdf')) ||
+          (currentFilter === 'epub' && book.mime_type?.toLowerCase().includes('epub')) ||
           (currentFilter === 'large' && book.file_size > 50 * 1024 * 1024);
 
         return matchesSearch && matchesFilter;
       });
 
-      if (sortBy === 'name_asc') {
-        filteredBooks.sort((a, b) => (a.file_name || '').localeCompare(b.file_name || ''));
-      } else if (sortBy === 'name_desc') {
-        filteredBooks.sort((a, b) => (b.file_name || '').localeCompare(a.file_name || ''));
-      } else if (sortBy === 'size_asc') {
-        filteredBooks.sort((a, b) => (a.file_size || 0) - (b.file_size || 0));
-      } else if (sortBy === 'size_desc') {
-        filteredBooks.sort((a, b) => (b.file_size || 0) - (a.file_size || 0));
+      // Sorting
+      if (sortBy.startsWith('name')) {
+        filteredBooks.sort((a, b) => {
+          const nameA = (a.file_name || '').toLowerCase();
+          const nameB = (b.file_name || '').toLowerCase();
+          return sortBy === 'name_asc' ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
+        });
+      } else if (sortBy.startsWith('size')) {
+        filteredBooks.sort((a, b) => {
+          const sizeA = a.file_size || 0;
+          const sizeB = b.file_size || 0;
+          return sortBy === 'size_asc' ? sizeA - sizeB : sizeB - sizeA;
+        });
       }
 
       renderBooks();
@@ -643,7 +652,11 @@
       elements.resultsGrid.style.display = 'grid';
 
       if (filteredBooks.length === 0) {
-        elements.resultsGrid.innerHTML = '<div class="empty">📭<br><br>No books found matching your criteria</div>';
+        elements.resultsGrid.innerHTML = `
+          <div class="empty">
+            📭<br><br>No books found matching your criteria
+          </div>
+        `;
         return;
       }
 
@@ -667,12 +680,13 @@
           </div>
           ${book.caption ? `<div class="caption">${esc(book.caption)}</div>` : ''}
           <div class="card-actions">
-            <a class="btn btn-primary" target="_blank" rel="noopener noreferrer"
+            <a class="btn btn-primary"
                href="https://t.me/${CONFIG.TG_BOT}?start=filep_${encodeURIComponent(book._id)}"
+               target="_blank" rel="noopener noreferrer"
                aria-label="Get ${esc(book.file_name)} on Telegram">
               📥 Get on Telegram
             </a>
-            <button class="btn btn-secondary" 
+            <button class="btn btn-secondary"
                     aria-label="Copy link for ${esc(book.file_name)}"
                     onclick="copyLink('${book._id}')">
               🔗 Copy Link
@@ -681,19 +695,6 @@
         </div>
       `).join('');
     };
-    
-    // Example: /api/books.js (Node.js)
-    export default async function handler(req, res) {
-      const SUPABASE_URL = `https://pracyjeiwgecdmmxgrew.supabase.co/rest/v1/books?select=*`;
-      const SUPABASE_KEY = process.env.SUPABASE_KEY; // Store in env vars
-    
-      const response = await fetch(SUPABASE_URL, {
-        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` }
-      });
-    
-      const data = await response.json();
-      res.status(200).json(data);
-    }
 
     // Event Listeners
     elements.searchInput.addEventListener('input', applyFilters);
@@ -708,7 +709,9 @@
       applyFilters();
     });
 
-    elements.retryBtn?.addEventListener('click', loadBooks);
+    if (elements.retryBtn) {
+      elements.retryBtn.addEventListener('click', loadBooks);
+    }
 
     document.querySelectorAll('.filter-chip').forEach(chip => {
       chip.addEventListener('click', () => {
@@ -728,10 +731,7 @@
       });
     });
 
-    // Expose copyLink globally for onclick handlers
     window.copyLink = copyLink;
-
-    // Load on start
     loadBooks();
   </script>
 </body>
