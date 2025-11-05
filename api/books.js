@@ -2,6 +2,8 @@ export default async function handler(req, res) {
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY;
 
+  console.log("🔍 ENV CHECK:", { SUPABASE_URL, keyExists: !!SUPABASE_KEY });
+
   if (!SUPABASE_URL || !SUPABASE_KEY) {
     return res.status(500).json({ error: "Backend not configured" });
   }
@@ -18,6 +20,8 @@ export default async function handler(req, res) {
 
     url += `&limit=${limit}&offset=${offset}`;
 
+    console.log("📡 Fetching:", url);
+
     const response = await fetch(url, {
       headers: {
         apikey: SUPABASE_KEY,
@@ -26,12 +30,19 @@ export default async function handler(req, res) {
       },
     });
 
-    if (!response.ok) throw new Error(`Supabase error ${response.status}`);
-    const data = await response.json();
+    console.log("✅ Supabase Response Status:", response.status);
 
+    if (!response.ok) {
+      const text = await response.text();
+      console.error("❌ Supabase Error:", text);
+      return res.status(response.status).json({ error: text });
+    }
+
+    const data = await response.json();
+    console.log("📚 Books Fetched:", data.length);
     res.status(200).json(data);
   } catch (err) {
-    console.error(err);
+    console.error("🔥 Server Error:", err);
     res.status(500).json({ error: err.message });
   }
 }
