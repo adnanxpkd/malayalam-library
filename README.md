@@ -1,246 +1,243 @@
-# 📚 Malayalam Books Library
+# 📚 eBooks Drive - Telegram Mini App
 
-A modern, beautiful web application for browsing and accessing Malayalam books stored in Supabase, with Telegram bot integration for file delivery.
-
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![HTML5](https://img.shields.io/badge/HTML5-E34F26?logo=html5&logoColor=white)
-![CSS3](https://img.shields.io/badge/CSS3-1572B6?logo=css3&logoColor=white)
-![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?logo=javascript&logoColor=black)
+A powerful Telegram Mini App for searching and accessing 432,000+ eBooks. Built with Supabase backend and optimized for fast search performance.
 
 ## ✨ Features
 
-- **🎨 Modern UI**: Sleek dark theme with smooth animations and gradient accents
-- **🔍 Smart Search**: Real-time search through book titles and descriptions
-- **🎯 Quick Filters**: One-click filtering by file type (PDF, EPUB) and size
-- **📊 Multiple Views**: Toggle between grid and list layouts
-- **📱 Responsive Design**: Works perfectly on desktop, tablet, and mobile
-- **⚡ Fast Performance**: Vanilla JavaScript with no framework overhead
-- **📥 Telegram Integration**: Direct download links through Telegram bot
-- **💾 Supabase Backend**: Reliable PostgreSQL database with REST API
+- 🔍 **Fast Search** - Search through 432K+ books instantly
+- 📱 **Telegram Integration** - Native Telegram Mini App experience
+- 🎨 **Adaptive Themes** - Supports Telegram dark/light themes
+- 📊 **Smart Sorting** - Sort by name, size, relevance
+- 💾 **Supabase Backend** - Reliable and scalable database
+- ⚡ **Optimized Performance** - Search-only approach for fast results
+- 🎯 **Haptic Feedback** - Native mobile vibration feedback
+- 👤 **User Info Display** - Shows Telegram user information
 
-## 🚀 Demo
+## 🚀 Live Demo
 
-[Live Demo](#) <!-- Add your live demo link here -->
-
-## 📸 Screenshots
-
-<!-- Add screenshots of your application -->
+- **Web App**: [https://alifdrive.vercel.app](https://alifdrive.vercel.app)
+- **Telegram Bot**: [@alifdrivebot](https://t.me/alifdrivebot)
 
 ## 🛠️ Tech Stack
 
-- **Frontend**: HTML5, CSS3, Vanilla JavaScript
-- **Backend**: Supabase (PostgreSQL + REST API)
-- **Bot**: Telegram Bot API
-- **Styling**: Custom CSS with CSS Grid and Flexbox
-- **Icons**: Unicode Emoji
+- **Frontend**: HTML, CSS, Vanilla JavaScript
+- **Backend**: Supabase (PostgreSQL)
+- **Hosting**: Vercel
+- **Integration**: Telegram Web App API
 
-## 📋 Prerequisites
+## 📦 Setup Instructions
 
-Before you begin, ensure you have:
-
-- A Supabase account and project
-- A Telegram bot (created via [@BotFather](https://t.me/botfather))
-- A web server or hosting platform (GitHub Pages, Netlify, Vercel, etc.)
-
-## 🔧 Installation
-
-### 1. Clone the Repository
+### 1. Clone Repository
 
 ```bash
-git clone https://github.com/yourusername/malayalam-books-library.git
-cd malayalam-books-library
+git clone https://github.com/adnanxpkd/malayalam-library.git
+cd malayalam-library
+git checkout telegram-web-app
 ```
 
-### 2. Set Up Supabase
+### 2. Configure Supabase
 
-1. Create a new Supabase project at [supabase.com](https://supabase.com)
-2. Create a table named `books` with the following schema:
+Update the following in `index.html`:
+
+```javascript
+const PROJECT_REF = 'your-project-ref';
+const SUPABASE_KEY = 'your-anon-key';
+```
+
+### 3. Deploy to Vercel
+
+```bash
+# Install Vercel CLI
+npm i -g vercel
+
+# Deploy
+vercel
+```
+
+Or use Vercel Dashboard:
+1. Import repository
+2. Deploy automatically
+
+### 4. Setup Telegram Bot
+
+Open [@BotFather](https://t.me/BotFather) and configure:
+
+#### Create Web App
+```
+/newapp
+Select your bot
+Title: eBooks Drive
+Description: Search and download 432,000+ eBooks
+Photo: Upload 640x360 image
+Web App URL: https://alifdrive.vercel.app
+Short name: ebooksdrive
+```
+
+#### Set Menu Button
+```
+/setmenubutton
+Select your bot
+Button text: 📚 Search Books
+Web App URL: https://alifdrive.vercel.app
+```
+
+#### Add Commands (Optional)
+```
+/setcommands
+search - 📚 Search eBooks
+help - ❓ Get help
+```
+
+## 🎯 How It Works
+
+1. **Search-Only Architecture**: No initial data load - users search to get results
+2. **Server-Side Filtering**: Supabase handles all search queries (case-insensitive)
+3. **Limit 1000 Results**: Maximum 1000 books per search for performance
+4. **Telegram Integration**: Uses official Telegram Web App SDK for native experience
+
+## 📊 Database Schema
 
 ```sql
 CREATE TABLE books (
-  _id TEXT PRIMARY KEY,
+  id SERIAL PRIMARY KEY,
+  _id TEXT UNIQUE NOT NULL,
   file_name TEXT NOT NULL,
   file_size BIGINT,
   mime_type TEXT,
   caption TEXT,
   created_at TIMESTAMP DEFAULT NOW()
 );
+
+-- Indexes for fast search
+CREATE INDEX idx_books_file_name ON books USING gin(file_name gin_trgm_ops);
+CREATE INDEX idx_books_caption ON books USING gin(caption gin_trgm_ops);
 ```
 
-3. Get your project details:
-   - Project Reference ID (from project URL)
-   - Anon/Public API key (from Settings > API)
+## 🔧 Configuration
 
-### 3. Set Up Telegram Bot
+### Environment Variables
 
-1. Create a bot using [@BotFather](https://t.me/botfather)
-2. Get your bot token
-3. Set up your bot to handle file requests with the format: `filep_<book_id>`
-
-### 4. Configure the Application
-
-Open `index.html` and update the configuration section:
+For production, consider using environment variables:
 
 ```javascript
 const CONFIG = {
-  PROJECT_REF: 'your-project-ref',           // Your Supabase project reference
-  SUPABASE_KEY: 'your-anon-key',            // Your Supabase anon key
-  TG_BOT: 'your-bot-username'               // Your Telegram bot username
+  SUPABASE_URL: process.env.SUPABASE_URL,
+  SUPABASE_KEY: process.env.SUPABASE_KEY,
+  BOT_USERNAME: process.env.BOT_USERNAME
 };
 ```
 
-### 5. Deploy
+### Telegram Bot Integration
 
-Deploy the `index.html` file to your preferred hosting platform:
+Add inline keyboard in your bot code:
 
-#### GitHub Pages
-```bash
-git add .
-git commit -m "Initial commit"
-git push origin main
+```python
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
+
+keyboard = InlineKeyboardMarkup([[
+    InlineKeyboardButton(
+        "📚 Open eBooks Drive", 
+        web_app=WebAppInfo(url="https://alifdrive.vercel.app")
+    )
+]])
+
+await update.message.reply_text(
+    "Search our massive collection!",
+    reply_markup=keyboard
+)
 ```
-Then enable GitHub Pages in repository Settings.
-
-#### Netlify
-```bash
-netlify deploy --prod
-```
-
-#### Vercel
-```bash
-vercel --prod
-```
-
-## 📊 Database Schema
-
-```sql
-CREATE TABLE books (
-  _id TEXT PRIMARY KEY,              -- Unique identifier
-  file_name TEXT NOT NULL,           -- Book filename
-  file_size BIGINT,                  -- File size in bytes
-  mime_type TEXT,                    -- MIME type (e.g., application/pdf)
-  caption TEXT,                      -- Book description
-  created_at TIMESTAMP DEFAULT NOW() -- Creation timestamp
-);
-
--- Indexes for better performance
-CREATE INDEX idx_file_name ON books(file_name);
-CREATE INDEX idx_mime_type ON books(mime_type);
-CREATE INDEX idx_created_at ON books(created_at DESC);
-```
-
-## 🎯 Usage
-
-### Adding Books to Database
-
-You can add books to your Supabase database using:
-
-1. **Supabase Dashboard**: Insert rows manually
-2. **API**: Use Supabase REST API or client libraries
-3. **Telegram Bot**: Set up your bot to automatically add files to the database
-
-Example using JavaScript:
-
-```javascript
-const { data, error } = await supabase
-  .from('books')
-  .insert([
-    {
-      _id: 'unique-id',
-      file_name: 'Malayalam Novel.pdf',
-      file_size: 5242880,
-      mime_type: 'application/pdf',
-      caption: 'A classic Malayalam novel'
-    }
-  ]);
-```
-
-### User Features
-
-- **Search**: Type in the search box to filter books by name or description
-- **Filter**: Click filter chips to show specific file types or sizes
-- **Sort**: Use the dropdown to sort by name or file size
-- **View**: Toggle between grid and list views
-- **Download**: Click "Get on Telegram" to download via your bot
-- **Share**: Copy deep links to share specific books
 
 ## 🎨 Customization
 
-### Change Colors
+### Change Theme Colors
 
-Edit the CSS variables in the `<style>` section:
+Edit CSS variables in `index.html`:
 
 ```css
-:root {
-  --bg-primary: #0a0e16;
-  --accent: #3b82f6;
-  --accent-hover: #2563eb;
-  /* Add more customizations */
+:root { 
+  --bg: #0b0f14; 
+  --card: #121821; 
+  --muted: #94a3b8; 
+  --txt: #e5eefb; 
+  --ring: #334155;
 }
 ```
 
-### Modify Layout
+### Modify Search Limit
 
-Adjust grid columns in the CSS:
+Change the search result limit:
 
-```css
-.grid.grid-view {
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-}
+```javascript
+const url = `${BASE_URL}?or=(...search query...)&limit=1000`; // Change 1000
 ```
 
-### Add Features
+## 📱 Telegram Mini App Features
 
-The codebase is modular and easy to extend. Key functions:
-- `loadBooks()`: Fetches data from Supabase
-- `applyFilters()`: Handles search and filtering
-- `renderBooks()`: Renders the book cards
+- ✅ Theme adaptation (dark/light mode)
+- ✅ Haptic feedback on interactions
+- ✅ MainButton integration
+- ✅ User info display
+- ✅ Closing confirmation
+- ✅ Auto-expand to full height
 
-## 🔒 Security Notes
+## 🐛 Troubleshooting
 
-- **API Keys**: The anon key is safe to expose in frontend code (it has Row Level Security)
-- **RLS**: Consider enabling Row Level Security in Supabase for production
-- **CORS**: Configure CORS settings in Supabase if needed
-- **Bot Token**: Never expose your Telegram bot token in frontend code
+### Search Not Working
+- Check Supabase credentials
+- Verify CORS settings in Supabase
+- Check browser console for errors
+
+### Telegram Integration Issues
+- Ensure HTTPS (Vercel provides this)
+- Verify bot token and Web App URL
+- Test on actual Telegram app (not web)
+
+### Slow Performance
+- Check Supabase indexes
+- Verify database region
+- Consider implementing caching
+
+## 📈 Performance Optimization
+
+- **Search-only approach**: No heavy initial load
+- **Client-side sorting**: After fetching results
+- **Debounced search**: 300ms delay on typing
+- **Lazy rendering**: Display results progressively
+- **Optimized queries**: Indexed database columns
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please follow these steps:
+Contributions are welcome! Please:
 
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+2. Create feature branch (`git checkout -b feature/amazing`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing`)
+5. Open Pull Request
 
-## 📝 License
+## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License.
+
+## 👨‍💻 Author
+
+**Adnan**
+- Telegram: [@adnanxpkd](https://t.me/adnanxpkd)
+- GitHub: [@adnanxpkd](https://github.com/adnanxpkd)
 
 ## 🙏 Acknowledgments
 
-- [Supabase](https://supabase.com) for the backend infrastructure
-- [Telegram](https://telegram.org) for the bot API
-- [Google Fonts](https://fonts.google.com) for the Inter font
-- The Malayalam reading community
+- Supabase for backend infrastructure
+- Telegram for Mini App platform
+- Vercel for hosting
+- Inter font by Rasmus Andersson
 
-## 📧 Contact
+## 📞 Support
 
-Your Name - [@yourtwitter](https://twitter.com/yourtwitter)
-
-Project Link: [https://github.com/yourusername/malayalam-books-library](https://github.com/yourusername/malayalam-books-library)
-
-## 🗺️ Roadmap
-
-- [ ] Add user authentication
-- [ ] Implement favorites/bookmarks
-- [ ] Add reading progress tracking
-- [ ] Support for more file formats
-- [ ] Advanced search with filters
-- [ ] Book categories and tags
-- [ ] User reviews and ratings
-- [ ] Dark/Light theme toggle
+For support and queries:
+- Open an issue on GitHub
+- Contact on Telegram: [@adnanxpkd](https://t.me/adnanxpkd)
 
 ---
 
-Made with ❤️ for the Malayalam reading community
+Made with ❤️ by [adnanxpkd](https://t.me/adnanxpkd)
