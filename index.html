@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>📚 Malayalam Books — Supabase Library</title>
+  <title>📚 eBooks Drive</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <style>
     :root { --bg:#0b0f14; --card:#121821; --muted:#94a3b8; --txt:#e5eefb; --ring:#334155; }
@@ -57,12 +57,15 @@
     .welcome-icon{font-size:64px;margin-bottom:16px}
     .welcome-title{font-size:20px;font-weight:600;margin-bottom:12px}
     .welcome-desc{color:var(--muted);font-size:14px;line-height:1.6;max-width:500px;margin:0 auto}
+    .footer{text-align:center;padding:30px 14px;color:var(--muted);font-size:13px;border-top:1px solid var(--ring);margin-top:40px}
+    .footer a{color:#60a5fa;text-decoration:none;font-weight:500}
+    .footer a:hover{text-decoration:underline}
   </style>
 </head>
 <body>
   <div class="wrap">
     <div class="header">
-      <div class="title">📚 Malayalam Books</div>
+      <div class="title">📚 eBooks Drive</div>
       <div class="stats">
         <div class="stat-item">
           <span>📖 Total Books:</span>
@@ -90,7 +93,7 @@
 
     <div id="welcome" class="welcome">
       <div class="welcome-icon">🔍</div>
-      <div class="welcome-title">Search 432,000+ Malayalam Books</div>
+      <div class="welcome-title">Search 432,000+ eBooks</div>
       <div class="welcome-desc">
         Type book name or keywords in the search box above and click Search to find books from our massive collection. 
         Fast and efficient search powered by Supabase.
@@ -107,6 +110,10 @@
     </div>
     
     <div id="results" class="grid" style="display:none"></div>
+    
+    <div class="footer">
+      Powered by <a href="https://t.me/adnanxpkd" target="_blank" rel="noopener">adnanxpkd</a>
+    </div>
   </div>
 
   <script>
