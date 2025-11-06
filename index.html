@@ -5,177 +5,779 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no" />
   <title>📚 eBooks Drive</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root { 
-      --bg:#0b0f14; 
-      --card:#121821; 
-      --muted:#94a3b8; 
-      --txt:#e5eefb; 
-      --ring:#334155;
-      --tg-theme-bg-color:#0b0f14;
-      --tg-theme-text-color:#e5eefb;
-      --tg-theme-hint-color:#94a3b8;
-      --tg-theme-link-color:#60a5fa;
-      --tg-theme-button-color:#1d4ed8;
-      --tg-theme-button-text-color:#ffffff;
+      --bg: #050812;
+      --bg-secondary: #0a0f1c;
+      --card: #0f1623;
+      --card-hover: #151d2e;
+      --border: #1e293b;
+      --border-hover: #334155;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --accent: #6366f1;
+      --accent-hover: #4f46e5;
+      --accent-glow: rgba(99, 102, 241, 0.4);
+      --success: #10b981;
+      --error: #ef4444;
+      --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      --gradient-secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      --gradient-accent: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+      --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5);
+      --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
+      --shadow-glow: 0 0 20px var(--accent-glow);
     }
-    *{box-sizing:border-box} 
-    body{
-      margin:0;
-      padding:0;
-      font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
-      background:var(--tg-theme-bg-color, var(--bg));
-      color:var(--tg-theme-text-color, var(--txt));
-      overflow-x:hidden;
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
     }
-    .wrap{max-width:1000px;margin:0 auto;padding:0 14px 80px}
-    @media(max-width:768px){.wrap{padding:0 12px 60px}}
-    .header{display:flex;justify-content:space-between;align-items:center;margin:14px 0;flex-wrap:wrap;gap:10px;
-            position:sticky;top:0;background:var(--tg-theme-bg-color, var(--bg));z-index:10;padding:10px 0}
-    @media(max-width:768px){.header{margin:10px 0;gap:8px;padding:8px 0}}
-    .title{font-weight:700;font-size:22px;margin:0;display:flex;align-items:center;gap:8px}
-    @media(max-width:768px){.title{font-size:18px;gap:6px}}
-    @media(max-width:480px){.title{font-size:16px}}
-    .user-info{font-size:12px;color:var(--tg-theme-hint-color, var(--muted));display:flex;align-items:center;gap:6px}
-    .stats{display:flex;gap:16px;font-size:14px;color:var(--tg-theme-hint-color, var(--muted));flex-wrap:wrap}
-    .stat-item{display:flex;align-items:center;gap:6px}
-    .stat-num{color:var(--tg-theme-link-color, #60a5fa);font-weight:600}
-    .bar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
-    input,select{background:var(--card);border:1px solid var(--ring);
-                 color:var(--tg-theme-text-color, var(--txt));
-                 border-radius:12px;padding:12px;outline:none;font-size:14px}
-    input{flex:1;min-width:220px}
-    input:focus{border-color:var(--tg-theme-button-color, #3b82f6)}
-    select{min-width:140px}
-    .btn{padding:10px 14px;border-radius:12px;border:1px solid var(--ring);
-         background:#121b27;color:var(--tg-theme-text-color, #e5eefb);cursor:pointer;font-size:14px;
-         transition:all 0.2s;user-select:none}
-    .btn:hover{background:#1a2332;border-color:#475569}
-    .btn:active{transform:scale(0.95)}
-    .btn:disabled{opacity:0.5;cursor:not-allowed}
-    .btn-search{background:var(--tg-theme-button-color, #1d4ed8);border:none;
-                color:var(--tg-theme-button-text-color, #fff)}
-    .btn-search:hover{opacity:0.9}
-    .grid{display:grid;grid-template-columns:1fr;gap:12px}
-    @media(min-width:720px){.grid{grid-template-columns:1fr 1fr}}
-    .card{background:var(--card);border:1px solid var(--ring);border-radius:16px;padding:14px;
-          transition:all 0.2s}
-    .card:active{transform:scale(0.98)}
-    .card:hover{border-color:#475569}
-    .name{font-weight:600;margin:0 0 6px;word-break:break-word;font-size:15px}
-    .meta{color:var(--tg-theme-hint-color, var(--muted));font-size:12px;margin-bottom:8px}
-    .cap{white-space:pre-wrap;color:#cbd5e1;font-size:13px;line-height:1.5;
-         display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
-    .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px}
-    .row .btn{flex:1;min-width:110px;justify-content:center;display:flex;align-items:center}
-    .tg{background:var(--tg-theme-button-color, #1d4ed8);border:none;
-        color:var(--tg-theme-button-text-color, #fff);font-size:13px;padding:8px 12px}
-    .tg:hover{opacity:0.9}
-    .empty{padding:60px 24px;text-align:center;color:#cbd5e1}
-    .empty-icon{font-size:48px;margin-bottom:12px;opacity:0.5}
-    .empty-text{font-size:16px;margin-bottom:8px}
-    .empty-hint{font-size:13px;color:#64748b}
-    .loading{padding:40px 24px;text-align:center;color:#cbd5e1}
-    .error{padding:40px 24px;text-align:center;color:#cbd5e1}
-    .count{color:#a3b3c7;font-size:13px;margin-left:auto}
-    .spinner{display:inline-block;width:16px;height:16px;border:2px solid #334155;
-             border-top-color:var(--tg-theme-button-color, #60a5fa);border-radius:50%;
-             animation:spin 0.8s linear infinite;margin-right:8px;vertical-align:middle}
-    @keyframes spin{to{transform:rotate(360deg)}}
-    .welcome{background:linear-gradient(135deg,#1e293b 0%,#0f172a 100%);
-             border:1px solid var(--ring);border-radius:16px;padding:40px 24px;
-             text-align:center;margin:40px 0}
-    .welcome-icon{font-size:64px;margin-bottom:16px}
-    .welcome-title{font-size:20px;font-weight:600;margin-bottom:12px}
-    .welcome-desc{color:var(--tg-theme-hint-color, var(--muted));font-size:14px;
-                  line-height:1.6;max-width:500px;margin:0 auto}
-    .footer{text-align:center;padding:20px 14px;color:var(--tg-theme-hint-color, var(--muted));
-            font-size:13px;border-top:1px solid var(--ring);margin-top:40px}
-    .footer a{color:var(--tg-theme-link-color, #60a5fa);text-decoration:none;font-weight:500}
-    .footer a:hover{text-decoration:underline}
-    .tg-badge{background:rgba(29,78,216,0.1);color:var(--tg-theme-button-color, #60a5fa);
-              padding:4px 10px;border-radius:8px;font-size:11px;font-weight:600}
-    .modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);
-           display:none;align-items:center;justify-content:center;z-index:100;padding:20px}
-    .modal.show{display:flex}
-    .modal-content{background:var(--card);border:1px solid var(--ring);border-radius:16px;
-                   max-width:600px;width:100%;max-height:80vh;overflow-y:auto;padding:24px}
-    .modal-header{display:flex;justify-content:space-between;align-items:start;margin-bottom:20px}
-    .modal-title{font-size:18px;font-weight:600;margin:0;flex:1;word-break:break-word}
-    .modal-close{background:transparent;border:none;color:var(--muted);font-size:24px;
-                 cursor:pointer;padding:0;width:32px;height:32px;display:flex;
-                 align-items:center;justify-content:center;border-radius:8px}
-    .modal-close:hover{background:var(--ring);color:var(--txt)}
-    .detail-row{margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--ring)}
-    .detail-row:last-child{border-bottom:none;margin-bottom:0}
-    .detail-label{font-size:12px;color:var(--muted);margin-bottom:4px;font-weight:600}
-    .detail-value{font-size:14px;color:var(--txt);word-break:break-word;white-space:pre-wrap}
-    .detail-actions{display:flex;gap:8px;margin-top:20px;flex-wrap:wrap}
-    .detail-actions .btn{flex:1;min-width:120px;justify-content:center;display:flex;align-items:center}
-    @media(max-width:480px){
-      .btn{font-size:12px;padding:8px 10px}
-      .row .btn{min-width:90px}
-      .detail-actions .btn{min-width:100px}
-      .modal-content{padding:16px}
-      .title{font-size:18px}
-      .bar{gap:8px}
-      input{min-width:100%;font-size:13px}
-      select{min-width:100%;font-size:13px}
+
+    html { 
+      scroll-padding-top: 80px;
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+      line-height: 1.6;
+      position: relative;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 600px;
+      background: radial-gradient(ellipse at top, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 20px 100px;
+      position: relative;
+      z-index: 1;
+    }
+
+    @media(max-width: 768px) {
+      .wrap { padding: 0 16px 80px; }
+    }
+
+    /* Header */
+    .header {
+      position: sticky;
+      top: 0;
+      background: rgba(5, 8, 18, 0.85);
+      backdrop-filter: blur(20px) saturate(180%);
+      z-index: 999;
+      padding: 16px 0;
+      border-bottom: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 32px;
+    }
+
+    .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .title {
+      font-weight: 800;
+      font-size: 28px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--gradient-primary);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .title-icon {
+      font-size: 32px;
+      filter: drop-shadow(0 0 8px rgba(99, 102, 241, 0.5));
+    }
+
+    @media(max-width: 768px) {
+      .title { font-size: 22px; }
+      .title-icon { font-size: 26px; }
+    }
+
+    .tg-badge {
+      background: linear-gradient(135deg, #2AABEE 0%, #229ED9 100%);
+      color: #fff;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      box-shadow: 0 2px 8px rgba(42, 171, 238, 0.4);
+    }
+
+    .user-info {
+      font-size: 13px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      background: var(--card);
+      border-radius: 20px;
+      border: 1px solid var(--border);
+    }
+
+    .stats {
+      display: flex;
+      gap: 24px;
+      font-size: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
+    .stat-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      transition: all 0.3s ease;
+    }
+
+    .stat-item:hover {
+      background: var(--card-hover);
+      border-color: var(--border-hover);
+      transform: translateY(-2px);
+    }
+
+    .stat-num {
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 16px;
+    }
+
+    /* Search Bar */
+    .bar {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 12px;
+    }
+
+    @media(max-width: 768px) {
+      .bar {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    input, select {
+      background: var(--card);
+      border: 2px solid var(--border);
+      color: var(--text);
+      border-radius: 14px;
+      padding: 14px 18px;
+      outline: none;
+      font-size: 15px;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      font-family: 'Inter', sans-serif;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--accent);
+      background: var(--card-hover);
+      box-shadow: var(--shadow-glow);
+    }
+
+    input::placeholder {
+      color: var(--text-dim);
+    }
+
+    select {
+      min-width: 160px;
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 16px center;
+      padding-right: 44px;
+    }
+
+    .btn {
+      padding: 14px 24px;
+      border-radius: 14px;
+      border: 2px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      user-select: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      position: relative;
+      overflow: hidden;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .btn::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      transform: translate(-50%, -50%);
+      transition: width 0.6s, height 0.6s;
+    }
+
+    .btn:hover::before {
+      width: 300px;
+      height: 300px;
+    }
+
+    .btn:hover {
+      background: var(--card-hover);
+      border-color: var(--border-hover);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .btn:active {
+      transform: scale(0.97);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-search {
+      background: var(--gradient-primary);
+      border: none;
+      color: #fff;
+      font-weight: 700;
+      box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4);
+    }
+
+    .btn-search:hover {
+      box-shadow: 0 6px 24px rgba(99, 102, 241, 0.5);
+      transform: translateY(-3px);
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Cards Grid */
+    .grid {
+      display: grid;
+      gap: 20px;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      margin-top: 32px;
+      animation: fadeIn 0.5s ease-in;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 24px;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--gradient-primary);
+      transform: scaleX(0);
+      transition: transform 0.4s ease;
+    }
+
+    .card:hover::before {
+      transform: scaleX(1);
+    }
+
+    .card:hover {
+      background: var(--card-hover);
+      border-color: var(--border-hover);
+      transform: translateY(-6px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .name {
+      font-weight: 700;
+      margin: 0 0 12px;
+      word-break: break-word;
+      font-size: 17px;
+      line-height: 1.4;
+      color: var(--text);
+    }
+
+    .meta {
+      color: var(--text-muted);
+      font-size: 13px;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .meta-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      background: rgba(99, 102, 241, 0.1);
+      border-radius: 8px;
+      font-weight: 500;
+    }
+
+    .cap {
+      white-space: pre-wrap;
+      color: var(--text-muted);
+      font-size: 14px;
+      line-height: 1.6;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      margin-bottom: 16px;
+      padding: 12px;
+      background: rgba(99, 102, 241, 0.05);
+      border-radius: 12px;
+      border-left: 3px solid var(--accent);
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+
+    .row .btn {
+      flex: 1;
+      min-width: 110px;
+      font-size: 13px;
+      padding: 10px 16px;
+    }
+
+    /* Welcome Screen */
+    .welcome {
+      text-align: center;
+      padding: 80px 32px;
+      animation: fadeIn 0.6s ease-in;
+    }
+
+    .welcome-icon {
+      font-size: 80px;
+      margin-bottom: 24px;
+      animation: float 3s ease-in-out infinite;
+      filter: drop-shadow(0 0 20px rgba(99, 102, 241, 0.4));
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-15px) rotate(3deg); }
+    }
+
+    .welcome-title {
+      font-size: 32px;
+      font-weight: 800;
+      margin-bottom: 16px;
+      background: var(--gradient-primary);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .welcome-desc {
+      font-size: 16px;
+      color: var(--text-muted);
+      max-width: 560px;
+      margin: 0 auto;
+      line-height: 1.8;
+    }
+
+    @media(max-width: 768px) {
+      .welcome { padding: 60px 24px; }
+      .welcome-icon { font-size: 64px; }
+      .welcome-title { font-size: 26px; }
+      .welcome-desc { font-size: 15px; }
+    }
+
+    /* Loading State */
+    .loading {
+      text-align: center;
+      padding: 80px 32px;
+      color: var(--text-muted);
+      font-size: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .loading .spinner {
+      width: 48px;
+      height: 48px;
+      border-width: 4px;
+      border-color: rgba(99, 102, 241, 0.2);
+      border-top-color: var(--accent);
+    }
+
+    /* Error State */
+    .error {
+      text-align: center;
+      padding: 80px 32px;
+      color: var(--error);
+      font-size: 16px;
+      line-height: 1.8;
+    }
+
+    /* Empty State */
+    .empty {
+      padding: 80px 32px;
+      text-align: center;
+      grid-column: 1/-1;
+    }
+
+    .empty-icon {
+      font-size: 64px;
+      margin-bottom: 20px;
+      opacity: 0.6;
+      filter: grayscale(1);
+    }
+
+    .empty-text {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 12px;
+    }
+
+    .empty-hint {
+      font-size: 15px;
+      color: var(--text-muted);
+    }
+
+    .count {
+      color: var(--text-muted);
+      font-size: 15px;
+      margin-top: 20px;
+      display: block;
+      text-align: center;
+      font-weight: 500;
+    }
+
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      z-index: 10000;
+      backdrop-filter: blur(8px);
+      animation: fadeIn 0.3s ease-in;
+      overflow-y: auto;
+      padding: 20px;
+    }
+
+    .modal.show {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-content {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      max-width: 640px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: var(--shadow-lg);
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(40px) scale(0.95); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 28px;
+      border-bottom: 1px solid var(--border);
+      gap: 20px;
+    }
+
+    .modal-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text);
+      word-break: break-word;
+      flex: 1;
+      line-height: 1.4;
+    }
+
+    .modal-close {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: var(--error);
+      font-size: 28px;
+      cursor: pointer;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+      transition: all 0.3s ease;
+      line-height: 1;
+      padding: 0;
+      flex-shrink: 0;
+      font-weight: 300;
+    }
+
+    .modal-close:hover {
+      background: rgba(239, 68, 68, 0.2);
+      border-color: var(--error);
+      transform: scale(1.1);
+    }
+
+    .detail-row {
+      padding: 20px 28px;
+      border-bottom: 1px solid var(--border);
+      transition: background 0.2s ease;
+    }
+
+    .detail-row:hover {
+      background: rgba(99, 102, 241, 0.03);
+    }
+
+    .detail-row:last-of-type {
+      border-bottom: none;
+    }
+
+    .detail-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .detail-value {
+      font-size: 15px;
+      color: var(--text);
+      word-break: break-word;
+      white-space: pre-wrap;
+      line-height: 1.6;
+      font-weight: 500;
+    }
+
+    .detail-actions {
+      display: flex;
+      gap: 12px;
+      padding: 28px;
+      flex-wrap: wrap;
+    }
+
+    .detail-actions .btn {
+      flex: 1;
+      min-width: 130px;
+    }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      padding: 32px 20px;
+      color: var(--text-muted);
+      font-size: 14px;
+      border-top: 1px solid var(--border);
+      margin-top: 60px;
+    }
+
+    .footer a {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 600;
+      transition: color 0.3s ease;
+    }
+
+    .footer a:hover {
+      color: var(--accent-hover);
+      text-decoration: underline;
+    }
+
+    /* Pagination */
+    #pageNav {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 16px;
+      margin-top: 32px;
+      flex-wrap: wrap;
+    }
+
+    #pageNav .btn {
+      min-width: 120px;
+    }
+
+    #pageNav span {
+      color: var(--text-muted);
+      font-size: 15px;
+      font-weight: 600;
+      padding: 12px 24px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+    }
+
+    /* Responsive */
+    @media(max-width: 480px) {
+      .btn { font-size: 13px; padding: 10px 16px; }
+      .row .btn { min-width: 100px; font-size: 12px; }
+      input, select { font-size: 14px; padding: 12px 16px; }
+      .card { padding: 20px; }
+      .name { font-size: 16px; }
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 10px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--bg-secondary);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 5px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--border-hover);
     }
   </style>
 </head>
 <body>
   <div class="wrap">
     <div class="header">
-      <div class="title">
-        📚 eBooks Drive
-        <span class="tg-badge" id="tgBadge" style="display:none">Telegram</span>
+      <div class="top">
+        <div class="title">
+          <span class="title-icon">📚</span>
+          eBooks Drive
+          <span class="tg-badge" id="tgBadge" style="display:none">Telegram</span>
+        </div>
+        <div class="user-info" id="userInfo"></div>
       </div>
-      <div class="user-info" id="userInfo"></div>
+
       <div class="stats">
         <div class="stat-item">
-          <span>📖 Total:</span>
-          <span class="stat-num">432,000+</span>
+          <span>📖</span>
+          <span>Total Books: <span class="stat-num">432,000+</span></span>
         </div>
       </div>
-    </div>
-    <div class="bar">
-      <input id="q" placeholder="Type to search books by name or caption…" />
-      <select id="sort">
-        <option value="relevance">Sort: Relevance</option>
-        <option value="name_asc">Name ↑</option>
-        <option value="name_desc">Name ↓</option>
-        <option value="size_desc">Size ↓</option>
-        <option value="size_asc">Size ↑</option>
-      </select>
-      <button id="searchBtn" class="btn btn-search">
-        <span class="spinner" style="display:none"></span>
-        <span id="searchBtnText">Search</span>
-      </button>
-      <button id="clear" class="btn" style="display:none">Clear</button>
+
+      <div class="bar">
+        <input id="q" placeholder="Search books by name or keywords..." />
+        <select id="sort">
+          <option value="relevance">Sort: Relevance</option>
+          <option value="name_asc">Name ↑</option>
+          <option value="name_desc">Name ↓</option>
+          <option value="size_desc">Size ↓</option>
+          <option value="size_asc">Size ↑</option>
+        </select>
+        <button id="searchBtn" class="btn btn-search">
+          <span class="spinner" style="display:none"></span>
+          <span id="searchBtnText">Search</span>
+        </button>
+        <button id="clear" class="btn" style="display:none">Clear</button>
+      </div>
       <span id="count" class="count"></span>
     </div>
+
     <div id="welcome" class="welcome">
       <div class="welcome-icon">🔍</div>
       <div class="welcome-title">Search 432,000+ eBooks</div>
       <div class="welcome-desc">
-        Type book name or keywords in the search box above and click Search to find books from our massive collection.
-        Fast and efficient search powered by Supabase.
+        Discover your next favorite book from our massive collection. Type in the search box above to get started with lightning-fast results powered by Supabase.
       </div>
     </div>
+
     <div id="loading" class="loading" style="display:none">
-      <span class="spinner"></span>Searching books...
+      <span class="spinner"></span>
+      <span>Searching books...</span>
     </div>
+
     <div id="error" class="error" style="display:none">
       ⚠️ Search failed. Please try again.<br>
-      <button class="btn" onclick="doSearch()" style="margin-top:12px">Retry</button>
+      <button class="btn" onclick="doSearch()" style="margin-top:16px">Retry</button>
     </div>
+
     <div id="results" class="grid" style="display:none"></div>
+
     <div class="footer">
       Powered by <a href="https://t.me/adnanxpkd" target="_blank" rel="noopener">adnanxpkd</a>
     </div>
   </div>
+
   <div id="detailModal" class="modal" onclick="closeModal(event)">
     <div class="modal-content" onclick="event.stopPropagation()">
       <div class="modal-header">
@@ -185,6 +787,7 @@
       <div id="modalBody"></div>
     </div>
   </div>
+
   <script>
   const PROJECT_REF = 'pracyjeiwgecdmmxgrew';
   const BASE_URL = `https://${PROJECT_REF}.supabase.co/rest/v1/books`;
@@ -193,9 +796,7 @@
   const PAGE_SIZE = 30;
 
   let searchResults = [];
-  let currentSortedResults = [];
   let currentPage = 1;
-  let totalPages = 1;
   let currentQuery = '';
   let tg = window.Telegram?.WebApp;
 
@@ -212,8 +813,20 @@
     welcome: document.getElementById('welcome'),
     userInfo: document.getElementById('userInfo'),
     tgBadge: document.getElementById('tgBadge'),
-    pageNav: document.getElementById('pageNav') // will create this
+    pageNav: null
   };
+
+  // Debounced search while typing
+  let debounceTimer;
+  els.q.addEventListener('input', () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      const val = els.q.value.trim();
+      if (val.length >= 2) {
+        doSearch();
+      }
+    }, 400);
+  });
 
   // Initialize Telegram Mini App
   if (tg) {
@@ -221,26 +834,30 @@
     tg.expand();
     tg.enableClosingConfirmation();
     els.tgBadge.style.display = 'inline-block';
+    
     if (tg.themeParams) {
-      document.documentElement.style.setProperty('--tg-theme-bg-color', tg.themeParams.bg_color || '#0b0f14');
-      document.documentElement.style.setProperty('--tg-theme-text-color', tg.themeParams.text_color || '#e5eefb');
-      document.documentElement.style.setProperty('--tg-theme-hint-color', tg.themeParams.hint_color || '#94a3b8');
-      document.documentElement.style.setProperty('--tg-theme-link-color', tg.themeParams.link_color || '#60a5fa');
-      document.documentElement.style.setProperty('--tg-theme-button-color', tg.themeParams.button_color || '#1d4ed8');
-      document.documentElement.style.setProperty('--tg-theme-button-text-color', tg.themeParams.button_text_color || '#ffffff');
+      const params = tg.themeParams;
+      if (params.bg_color) document.documentElement.style.setProperty('--bg', params.bg_color);
+      if (params.text_color) document.documentElement.style.setProperty('--text', params.text_color);
+      if (params.hint_color) document.documentElement.style.setProperty('--text-muted', params.hint_color);
+      if (params.link_color) document.documentElement.style.setProperty('--accent', params.link_color);
+      if (params.button_color) document.documentElement.style.setProperty('--accent', params.button_color);
     }
+    
     if (tg.initDataUnsafe?.user) {
       const user = tg.initDataUnsafe.user;
       els.userInfo.innerHTML = `👋 ${user.first_name || 'User'}`;
     }
+    
     tg.MainButton.text = 'SEARCH';
-    tg.MainButton.color = tg.themeParams.button_color || '#1d4ed8';
+    tg.MainButton.color = tg.themeParams?.button_color || '#6366f1';
     tg.MainButton.onClick(() => {
       if (els.q.value.trim()) {
-        tg.HapticFeedback?.impactOccurred('light');
+        if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
         doSearch();
       }
     });
+    
     els.q.addEventListener('input', () => {
       if (els.q.value.trim().length >= 2) {
         tg.MainButton.show();
@@ -262,7 +879,7 @@
     if (!query || query.length < 2) {
       if (tg) {
         tg.showAlert('Please enter at least 2 characters to search');
-        tg.HapticFeedback?.notificationOccurred('error');
+        if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
       } else {
         alert('Please enter at least 2 characters to search');
       }
@@ -277,49 +894,62 @@
     els.welcome.style.display = 'none';
     els.results.style.display = 'none';
     els.error.style.display = 'none';
-    els.loading.style.display = 'block';
+    els.loading.style.display = 'flex';
     els.searchBtn.disabled = true;
     els.searchBtn.querySelector('.spinner').style.display = 'inline-block';
     els.searchBtnText.textContent = 'Searching...';
+    els.count.textContent = '';
+    
     if (tg) {
       tg.MainButton.showProgress();
-      tg.HapticFeedback?.impactOccurred('light');
+      if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
     }
 
     try {
       const searchPattern = `%${query}%`;
       const offset = (currentPage - 1) * PAGE_SIZE;
-      const url = `${BASE_URL}?or=(file_name.ilike.${encodeURIComponent(searchPattern)},caption.ilike.${encodeURIComponent(searchPattern)})&limit=${PAGE_SIZE}&offset=${offset}`;
+      
+      let url = `${BASE_URL}?or=(file_name.ilike.${encodeURIComponent(searchPattern)},caption.ilike.${encodeURIComponent(searchPattern)})&limit=${PAGE_SIZE}&offset=${offset}`;
+      
+      const sortValue = els.sort.value;
+      if (sortValue === 'name_asc') {
+        url += '&order=file_name.asc';
+      } else if (sortValue === 'name_desc') {
+        url += '&order=file_name.desc';
+      } else if (sortValue === 'size_asc') {
+        url += '&order=file_size.asc';
+      } else if (sortValue === 'size_desc') {
+        url += '&order=file_size.desc';
+      }
 
       const res = await fetch(url, {
         method: 'GET',
         headers: {
           'apikey': SUPABASE_KEY,
-          'Authorization': `Bearer ${SUPABASE_KEY}`
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'Prefer': 'count=exact'
         }
       });
 
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      
       const newResults = await res.json();
-
-      // Estimate if there’s a next page
-      const hasFullPage = newResults.length === PAGE_SIZE;
-      totalPages = hasFullPage ? currentPage + 1 : currentPage;
-
       searchResults = newResults;
+      
       els.loading.style.display = 'none';
       els.clear.style.display = 'inline-block';
-      sortAndRender();
-      if (tg) {
-        tg.HapticFeedback?.notificationOccurred('success');
+      render(searchResults);
+      
+      if (tg && tg.HapticFeedback) {
+        tg.HapticFeedback.notificationOccurred('success');
       }
 
     } catch (err) {
       console.error('Search error:', err);
       els.loading.style.display = 'none';
       els.error.style.display = 'block';
-      if (tg) {
-        tg.HapticFeedback?.notificationOccurred('error');
+      if (tg && tg.HapticFeedback) {
+        tg.HapticFeedback.notificationOccurred('error');
       }
     } finally {
       els.searchBtn.disabled = false;
@@ -331,32 +961,15 @@
     }
   }
 
-  function sortAndRender() {
-    // Sorting always starts from page 1
-    if (els.sort.value !== 'relevance') {
-      currentPage = 1;
-      doSearch(false);
-      return;
-    }
-
-    const sort = els.sort.value;
-    let sorted = [...searchResults];
-    if (sort === 'name_asc') sorted.sort((a, b) => (a.file_name || '').localeCompare(b.file_name || ''));
-    else if (sort === 'name_desc') sorted.sort((a, b) => (b.file_name || '').localeCompare(a.file_name || ''));
-    else if (sort === 'size_asc') sorted.sort((a, b) => (a.file_size || 0) - (b.file_size || 0));
-    else if (sort === 'size_desc') sorted.sort((a, b) => (b.file_size || 0) - (a.file_size || 0));
-
-    currentSortedResults = sorted;
-    render(sorted);
-  }
-
   function render(list) {
     els.results.style.display = 'grid';
     els.results.innerHTML = '';
 
+    els.count.textContent = `${list.length} result${list.length !== 1 ? 's' : ''} found`;
+
     if (list.length === 0) {
       els.results.innerHTML = `
-        <div class="empty" style="grid-column:1/-1">
+        <div class="empty">
           <div class="empty-icon">📭</div>
           <div class="empty-text">No books found</div>
           <div class="empty-hint">Try different keywords or check spelling</div>
@@ -369,7 +982,10 @@
     els.results.innerHTML = list.map((b, idx) => `
       <div class="card">
         <h3 class="name">${esc(b.file_name)}</h3>
-        <div class="meta">${mb(b.file_size)} MB • ${esc(b.mime_type || 'Unknown')}</div>
+        <div class="meta">
+          <span class="meta-item">📊 ${mb(b.file_size)} MB</span>
+          <span class="meta-item">📄 ${esc(b.mime_type || 'Unknown')}</span>
+        </div>
         ${b.caption ? `<div class="cap">${esc(b.caption)}</div>` : ''}
         <div class="row">
           <a class="btn tg" target="_blank" rel="noopener"
@@ -378,7 +994,7 @@
             📥 Get Book
           </a>
           <button class="btn" onclick="showDetails(${idx})">📋 Details</button>
-          <button class="btn" onclick="copyLink('${esc(b._id)}')">Copy Link</button>
+          <button class="btn" onclick="copyLink('${esc(b._id)}')">🔗 Copy</button>
         </div>
       </div>
     `).join('');
@@ -387,40 +1003,27 @@
   }
 
   function updatePagination() {
-    // Remove existing nav if any
     if (els.pageNav) els.pageNav.remove();
 
     const nav = document.createElement('div');
     nav.id = 'pageNav';
-    nav.style.display = 'flex';
-    nav.style.justifyContent = 'center';
-    nav.style.gap = '12px';
-    nav.style.marginTop = '20px';
-    nav.style.flexWrap = 'wrap';
 
-    // Page info
-    const pageInfo = document.createElement('span');
-    pageInfo.className = 'count';
-    if (searchResults.length === 0) {
-      pageInfo.textContent = 'Page 0 of 0';
-    } else {
-      pageInfo.textContent = `Page ${currentPage} ${totalPages > currentPage ? `of ${totalPages}+` : ''}`;
-    }
-    nav.appendChild(pageInfo);
-
-    // Prev button
     if (currentPage > 1) {
       const prevBtn = document.createElement('button');
       prevBtn.className = 'btn';
-      prevBtn.textContent = '← Prev';
+      prevBtn.textContent = '← Previous';
       prevBtn.onclick = () => {
         currentPage--;
         doSearch(false);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       };
       nav.appendChild(prevBtn);
     }
 
-    // Next button
+    const pageInfo = document.createElement('span');
+    pageInfo.textContent = `Page ${currentPage}`;
+    nav.appendChild(pageInfo);
+
     if (searchResults.length === PAGE_SIZE) {
       const nextBtn = document.createElement('button');
       nextBtn.className = 'btn';
@@ -428,6 +1031,7 @@
       nextBtn.onclick = () => {
         currentPage++;
         doSearch(false);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       };
       nav.appendChild(nextBtn);
     }
@@ -437,23 +1041,21 @@
   }
 
   function handleTgLink(e) {
-    if (tg) tg.HapticFeedback?.impactOccurred('medium');
+    if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
   }
 
   function clearSearch() {
     els.q.value = '';
     searchResults = [];
-    currentSortedResults = [];
     currentPage = 1;
-    totalPages = 1;
     els.results.style.display = 'none';
     els.clear.style.display = 'none';
     els.welcome.style.display = 'block';
     els.count.textContent = '';
-    document.getElementById('pageNav')?.remove();
+    if (els.pageNav) els.pageNav.remove();
     if (tg) {
       tg.MainButton.hide();
-      tg.HapticFeedback?.impactOccurred('light');
+      if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
     }
   }
 
@@ -463,20 +1065,25 @@
       const btn = event.target;
       const orig = btn.textContent;
       btn.textContent = '✅ Copied!';
-      if (tg) tg.HapticFeedback?.notificationOccurred('success');
+      if (tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
       setTimeout(() => btn.textContent = orig, 2000);
     }).catch(() => {
-      if (tg) tg.showAlert('Copy failed. Please try again.');
-      else alert('Copy failed');
+      if (tg) {
+        tg.showAlert('Copy failed. Please try again.');
+      } else {
+        alert('Copy failed');
+      }
     });
   }
 
   function showDetails(index) {
-    const book = currentSortedResults[index];
+    const book = searchResults[index];
     const modal = document.getElementById('detailModal');
     const modalTitle = document.getElementById('modalTitle');
     const modalBody = document.getElementById('modalBody');
+    
     modalTitle.textContent = book.file_name || 'Book Details';
+    
     const details = [
       { label: 'File Name', value: book.file_name || 'N/A' },
       { label: 'File Size', value: `${mb(book.file_size)} MB (${(book.file_size || 0).toLocaleString()} bytes)` },
@@ -484,6 +1091,7 @@
       { label: 'File ID', value: book._id || 'N/A' },
       { label: 'Caption', value: book.caption || 'No caption available' }
     ];
+    
     modalBody.innerHTML = `
       ${details.map(d => `
         <div class="detail-row">
@@ -497,27 +1105,39 @@
            onclick="handleTgLink(event)">
           📥 Get Book
         </a>
-        <button class="btn" onclick="copyLink('${esc(book._id)}')">Copy Link</button>
+        <button class="btn" onclick="copyLink('${esc(book._id)}')">🔗 Copy Link</button>
         <button class="btn" onclick="closeModal()">Close</button>
       </div>
     `;
+    
     modal.classList.add('show');
-    if (tg) tg.HapticFeedback?.impactOccurred('light');
+    document.body.style.overflow = 'hidden';
+    
+    if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
   }
 
   function closeModal(event) {
-    if (!event || event.target === event.currentTarget) {
+    if (!event || event.target === event.currentTarget || event.target.classList.contains('modal-close')) {
       document.getElementById('detailModal').classList.remove('show');
-      if (tg) tg.HapticFeedback?.impactOccurred('light');
+      document.body.style.overflow = '';
+      if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
     }
   }
 
   // Event listeners
   els.searchBtn.addEventListener('click', () => doSearch());
   els.clear.addEventListener('click', clearSearch);
-  els.sort.addEventListener('change', sortAndRender);
-  els.q.addEventListener('keypress', (e) => { if (e.key === 'Enter') doSearch(); });
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+  els.sort.addEventListener('change', () => {
+    if (searchResults.length > 0) {
+      currentPage = 1;
+      doSearch(false);
+    }
+  });
+  els.q.addEventListener('keypress', (e) => { 
+    if (e.key === 'Enter') doSearch(); 
+  });
+  document.addEventListener('keydown', (e) => { 
+    if (e.key === 'Escape') closeModal(); 
+  });
+
 </script>
-</body>
-</html>
