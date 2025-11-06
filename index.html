@@ -140,7 +140,6 @@
         </div>
       </div>
     </div>
-
     <div class="bar">
       <input id="q" placeholder="Type to search books by name or caption…" />
       <select id="sort">
@@ -157,7 +156,6 @@
       <button id="clear" class="btn" style="display:none">Clear</button>
       <span id="count" class="count"></span>
     </div>
-
     <div id="welcome" class="welcome">
       <div class="welcome-icon">🔍</div>
       <div class="welcome-title">Search 432,000+ eBooks</div>
@@ -166,23 +164,18 @@
         Fast and efficient search powered by Supabase.
       </div>
     </div>
-
     <div id="loading" class="loading" style="display:none">
       <span class="spinner"></span>Searching books...
     </div>
-    
     <div id="error" class="error" style="display:none">
       ⚠️ Search failed. Please try again.<br>
       <button class="btn" onclick="doSearch()" style="margin-top:12px">Retry</button>
     </div>
-    
     <div id="results" class="grid" style="display:none"></div>
-    
     <div class="footer">
       Powered by <a href="https://t.me/adnanxpkd" target="_blank" rel="noopener">adnanxpkd</a>
     </div>
   </div>
-
   <div id="detailModal" class="modal" onclick="closeModal(event)">
     <div class="modal-content" onclick="event.stopPropagation()">
       <div class="modal-header">
@@ -192,311 +185,339 @@
       <div id="modalBody"></div>
     </div>
   </div>
-
   <script>
-    const PROJECT_REF = 'pracyjeiwgecdmmxgrew';
-    const BASE_URL = `https://${PROJECT_REF}.supabase.co/rest/v1/books`;
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InByYWN5amVpd2dlY2RtbXhncmV3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIzNTg4OTAsImV4cCI6MjA3NzkzNDg5MH0.ms_j25yUwMXDtwGk9J-bRfHhEKbEE0M4yRBxnyIEZQ4';
-    const TG_BOT = 'alifdrivebot';
+  const PROJECT_REF = 'pracyjeiwgecdmmxgrew';
+  const BASE_URL = `https://${PROJECT_REF}.supabase.co/rest/v1/books`;
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InByYWN5amVpd2dlY2RtbXhncmV3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIzNTg4OTAsImV4cCI6MjA3NzkzNDg5MH0.ms_j25yUwMXDtwGk9J-bRfHhEKbEE0M4yRBxnyIEZQ4';
+  const TG_BOT = 'alifdrivebot';
+  const PAGE_SIZE = 30;
 
-    let searchResults = [];
-    let currentSortedResults = [];
-    let tg = window.Telegram?.WebApp;
+  let searchResults = [];
+  let currentSortedResults = [];
+  let currentPage = 1;
+  let totalPages = 1;
+  let currentQuery = '';
+  let tg = window.Telegram?.WebApp;
 
-    const els = {
-      q: document.getElementById('q'),
-      sort: document.getElementById('sort'),
-      clear: document.getElementById('clear'),
-      searchBtn: document.getElementById('searchBtn'),
-      searchBtnText: document.getElementById('searchBtnText'),
-      loading: document.getElementById('loading'),
-      error: document.getElementById('error'),
-      results: document.getElementById('results'),
-      count: document.getElementById('count'),
-      welcome: document.getElementById('welcome'),
-      userInfo: document.getElementById('userInfo'),
-      tgBadge: document.getElementById('tgBadge')
-    };
+  const els = {
+    q: document.getElementById('q'),
+    sort: document.getElementById('sort'),
+    clear: document.getElementById('clear'),
+    searchBtn: document.getElementById('searchBtn'),
+    searchBtnText: document.getElementById('searchBtnText'),
+    loading: document.getElementById('loading'),
+    error: document.getElementById('error'),
+    results: document.getElementById('results'),
+    count: document.getElementById('count'),
+    welcome: document.getElementById('welcome'),
+    userInfo: document.getElementById('userInfo'),
+    tgBadge: document.getElementById('tgBadge'),
+    pageNav: document.getElementById('pageNav') // will create this
+  };
 
-    // Initialize Telegram Mini App
-    if (tg) {
-      tg.ready();
-      tg.expand();
-      tg.enableClosingConfirmation();
-      
-      // Show Telegram badge
-      els.tgBadge.style.display = 'inline-block';
-      
-      // Apply Telegram theme colors
-      if (tg.themeParams) {
-        document.documentElement.style.setProperty('--tg-theme-bg-color', tg.themeParams.bg_color || '#0b0f14');
-        document.documentElement.style.setProperty('--tg-theme-text-color', tg.themeParams.text_color || '#e5eefb');
-        document.documentElement.style.setProperty('--tg-theme-hint-color', tg.themeParams.hint_color || '#94a3b8');
-        document.documentElement.style.setProperty('--tg-theme-link-color', tg.themeParams.link_color || '#60a5fa');
-        document.documentElement.style.setProperty('--tg-theme-button-color', tg.themeParams.button_color || '#1d4ed8');
-        document.documentElement.style.setProperty('--tg-theme-button-text-color', tg.themeParams.button_text_color || '#ffffff');
-      }
-      
-      // Show user info if available
-      if (tg.initDataUnsafe?.user) {
-        const user = tg.initDataUnsafe.user;
-        els.userInfo.innerHTML = `👋 ${user.first_name || 'User'}`;
-      }
-      
-      // Setup MainButton for search
-      tg.MainButton.text = 'SEARCH';
-      tg.MainButton.color = tg.themeParams.button_color || '#1d4ed8';
-      tg.MainButton.onClick(() => {
-        if (els.q.value.trim()) {
-          tg.HapticFeedback?.impactOccurred('light');
-          doSearch();
-        }
-      });
-      
-      // Show MainButton when text is entered
-      els.q.addEventListener('input', () => {
-        if (els.q.value.trim().length >= 2) {
-          tg.MainButton.show();
-        } else {
-          tg.MainButton.hide();
-        }
-      });
+  // Initialize Telegram Mini App
+  if (tg) {
+    tg.ready();
+    tg.expand();
+    tg.enableClosingConfirmation();
+    els.tgBadge.style.display = 'inline-block';
+    if (tg.themeParams) {
+      document.documentElement.style.setProperty('--tg-theme-bg-color', tg.themeParams.bg_color || '#0b0f14');
+      document.documentElement.style.setProperty('--tg-theme-text-color', tg.themeParams.text_color || '#e5eefb');
+      document.documentElement.style.setProperty('--tg-theme-hint-color', tg.themeParams.hint_color || '#94a3b8');
+      document.documentElement.style.setProperty('--tg-theme-link-color', tg.themeParams.link_color || '#60a5fa');
+      document.documentElement.style.setProperty('--tg-theme-button-color', tg.themeParams.button_color || '#1d4ed8');
+      document.documentElement.style.setProperty('--tg-theme-button-text-color', tg.themeParams.button_text_color || '#ffffff');
     }
-
-    const mb = n => (n/1024/1024).toFixed(2);
-    const esc = s => {
-      const div = document.createElement('div');
-      div.textContent = s || '';
-      return div.innerHTML;
-    };
-
-    async function doSearch() {
-      const query = els.q.value.trim();
-      
-      if (!query || query.length < 2) {
-        if (tg) {
-          tg.showAlert('Please enter at least 2 characters to search');
-          tg.HapticFeedback?.notificationOccurred('error');
-        } else {
-          alert('Please enter at least 2 characters to search');
-        }
-        return;
-      }
-
-      els.welcome.style.display = 'none';
-      els.results.style.display = 'none';
-      els.error.style.display = 'none';
-      els.loading.style.display = 'block';
-      els.searchBtn.disabled = true;
-      els.searchBtn.querySelector('.spinner').style.display = 'inline-block';
-      els.searchBtnText.textContent = 'Searching...';
-      
-      if (tg) {
-        tg.MainButton.showProgress();
+    if (tg.initDataUnsafe?.user) {
+      const user = tg.initDataUnsafe.user;
+      els.userInfo.innerHTML = `👋 ${user.first_name || 'User'}`;
+    }
+    tg.MainButton.text = 'SEARCH';
+    tg.MainButton.color = tg.themeParams.button_color || '#1d4ed8';
+    tg.MainButton.onClick(() => {
+      if (els.q.value.trim()) {
         tg.HapticFeedback?.impactOccurred('light');
+        doSearch();
       }
-
-      try {
-        const searchPattern = `%${query}%`;
-        const url = `${BASE_URL}?or=(file_name.ilike.${encodeURIComponent(searchPattern)},caption.ilike.${encodeURIComponent(searchPattern)})&limit=1000`;
-        
-        const res = await fetch(url, {
-          method: 'GET',
-          headers: {
-            'apikey': SUPABASE_KEY,
-            'Authorization': `Bearer ${SUPABASE_KEY}`,
-            'Content-Type': 'application/json'
-          }
-        });
-        
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        
-        searchResults = await res.json();
-        
-        els.loading.style.display = 'none';
-        els.clear.style.display = 'inline-block';
-        sortAndRender();
-        
-        if (tg) {
-          tg.HapticFeedback?.notificationOccurred('success');
-        }
-        
-      } catch(err) {
-        console.error('Search error:', err);
-        els.loading.style.display = 'none';
-        els.error.style.display = 'block';
-        
-        if (tg) {
-          tg.HapticFeedback?.notificationOccurred('error');
-        }
-      } finally {
-        els.searchBtn.disabled = false;
-        els.searchBtn.querySelector('.spinner').style.display = 'none';
-        els.searchBtnText.textContent = 'Search';
-        
-        if (tg) {
-          tg.MainButton.hideProgress();
-        }
-      }
-    }
-
-    function sortAndRender() {
-      const sort = els.sort.value;
-      let sorted = [...searchResults];
-      
-      if(sort === 'name_asc') sorted.sort((a,b) => (a.file_name||'').localeCompare(b.file_name||''));
-      else if(sort === 'name_desc') sorted.sort((a,b) => (b.file_name||'').localeCompare(a.file_name||''));
-      else if(sort === 'size_asc') sorted.sort((a,b) => (a.file_size||0) - (b.file_size||0));
-      else if(sort === 'size_desc') sorted.sort((a,b) => (b.file_size||0) - (a.file_size||0));
-      
-      currentSortedResults = sorted;
-      render(sorted);
-    }
-
-    function render(list) {
-      els.results.style.display = 'grid';
-      els.count.textContent = `${list.length.toLocaleString()} results`;
-      
-      if (list.length === 0) {
-        els.results.innerHTML = `
-          <div class="empty" style="grid-column:1/-1">
-            <div class="empty-icon">📭</div>
-            <div class="empty-text">No books found</div>
-            <div class="empty-hint">Try different keywords or check spelling</div>
-          </div>
-        `;
-        return;
-      }
-      
-      if (list.length === 1000) {
-        els.count.textContent = `1,000+ results (showing first 1,000)`;
-      }
-      
-      els.results.innerHTML = list.map((b, idx) => `
-        <div class="card">
-          <h3 class="name">${esc(b.file_name)}</h3>
-          <div class="meta">${mb(b.file_size)} MB • ${esc(b.mime_type || 'Unknown')}</div>
-          ${b.caption ? `<div class="cap">${esc(b.caption)}</div>` : ''}
-          <div class="row">
-            <a class="btn tg" target="_blank" rel="noopener"
-               href="https://t.me/${TG_BOT}?start=filep_${encodeURIComponent(b._id)}"
-               onclick="handleTgLink(event)">
-              📥 Get Book
-            </a>
-            <button class="btn" onclick="showDetails(${idx})">📋 Details</button>
-            <button class="btn" onclick="copyLink('${esc(b._id)}')">Copy Link</button>
-          </div>
-        </div>
-      `).join('');
-    }
-
-    function handleTgLink(e) {
-      if (tg) {
-        tg.HapticFeedback?.impactOccurred('medium');
-      }
-    }
-
-    function clearSearch() {
-      els.q.value = '';
-      searchResults = [];
-      currentSortedResults = [];
-      els.results.style.display = 'none';
-      els.clear.style.display = 'none';
-      els.welcome.style.display = 'block';
-      els.count.textContent = '';
-      
-      if (tg) {
+    });
+    els.q.addEventListener('input', () => {
+      if (els.q.value.trim().length >= 2) {
+        tg.MainButton.show();
+      } else {
         tg.MainButton.hide();
-        tg.HapticFeedback?.impactOccurred('light');
       }
+    });
+  }
+
+  const mb = n => (n/1024/1024).toFixed(2);
+  const esc = s => {
+    const div = document.createElement('div');
+    div.textContent = s || '';
+    return div.innerHTML;
+  };
+
+  async function doSearch(resetPage = true) {
+    const query = els.q.value.trim();
+    if (!query || query.length < 2) {
+      if (tg) {
+        tg.showAlert('Please enter at least 2 characters to search');
+        tg.HapticFeedback?.notificationOccurred('error');
+      } else {
+        alert('Please enter at least 2 characters to search');
+      }
+      return;
     }
 
-    function copyLink(id) {
-      const url = `https://t.me/${TG_BOT}?start=filep_${id}`;
-      navigator.clipboard.writeText(url).then(() => {
-        const btn = event.target;
-        const orig = btn.textContent;
-        btn.textContent = '✅ Copied!';
-        
-        if (tg) {
-          tg.HapticFeedback?.notificationOccurred('success');
-        }
-        
-        setTimeout(() => btn.textContent = orig, 2000);
-      }).catch(() => {
-        if (tg) {
-          tg.showAlert('Copy failed. Please try again.');
-        } else {
-          alert('Copy failed');
+    if (resetPage) {
+      currentPage = 1;
+      currentQuery = query;
+    }
+
+    els.welcome.style.display = 'none';
+    els.results.style.display = 'none';
+    els.error.style.display = 'none';
+    els.loading.style.display = 'block';
+    els.searchBtn.disabled = true;
+    els.searchBtn.querySelector('.spinner').style.display = 'inline-block';
+    els.searchBtnText.textContent = 'Searching...';
+    if (tg) {
+      tg.MainButton.showProgress();
+      tg.HapticFeedback?.impactOccurred('light');
+    }
+
+    try {
+      const searchPattern = `%${query}%`;
+      const offset = (currentPage - 1) * PAGE_SIZE;
+      const url = `${BASE_URL}?or=(file_name.ilike.${encodeURIComponent(searchPattern)},caption.ilike.${encodeURIComponent(searchPattern)})&limit=${PAGE_SIZE}&offset=${offset}`;
+
+      const res = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`
         }
       });
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const newResults = await res.json();
+
+      // Estimate if there’s a next page
+      const hasFullPage = newResults.length === PAGE_SIZE;
+      totalPages = hasFullPage ? currentPage + 1 : currentPage;
+
+      searchResults = newResults;
+      els.loading.style.display = 'none';
+      els.clear.style.display = 'inline-block';
+      sortAndRender();
+      if (tg) {
+        tg.HapticFeedback?.notificationOccurred('success');
+      }
+
+    } catch (err) {
+      console.error('Search error:', err);
+      els.loading.style.display = 'none';
+      els.error.style.display = 'block';
+      if (tg) {
+        tg.HapticFeedback?.notificationOccurred('error');
+      }
+    } finally {
+      els.searchBtn.disabled = false;
+      els.searchBtn.querySelector('.spinner').style.display = 'none';
+      els.searchBtnText.textContent = 'Search';
+      if (tg) {
+        tg.MainButton.hideProgress();
+      }
+    }
+  }
+
+  function sortAndRender() {
+    // Sorting always starts from page 1
+    if (els.sort.value !== 'relevance') {
+      currentPage = 1;
+      doSearch(false);
+      return;
     }
 
-    function showDetails(index) {
-      const book = currentSortedResults[index];
-      const modal = document.getElementById('detailModal');
-      const modalTitle = document.getElementById('modalTitle');
-      const modalBody = document.getElementById('modalBody');
-      
-      modalTitle.textContent = book.file_name || 'Book Details';
-      
-      const details = [
-        { label: 'File Name', value: book.file_name || 'N/A' },
-        { label: 'File Size', value: `${mb(book.file_size)} MB (${(book.file_size || 0).toLocaleString()} bytes)` },
-        { label: 'MIME Type', value: book.mime_type || 'Unknown' },
-        { label: 'File ID', value: book._id || 'N/A' },
-        { label: 'Caption', value: book.caption || 'No caption available' }
-      ];
-      
-      modalBody.innerHTML = `
-        ${details.map(d => `
-          <div class="detail-row">
-            <div class="detail-label">${d.label}</div>
-            <div class="detail-value">${esc(d.value)}</div>
-          </div>
-        `).join('')}
-        <div class="detail-actions">
+    const sort = els.sort.value;
+    let sorted = [...searchResults];
+    if (sort === 'name_asc') sorted.sort((a, b) => (a.file_name || '').localeCompare(b.file_name || ''));
+    else if (sort === 'name_desc') sorted.sort((a, b) => (b.file_name || '').localeCompare(a.file_name || ''));
+    else if (sort === 'size_asc') sorted.sort((a, b) => (a.file_size || 0) - (b.file_size || 0));
+    else if (sort === 'size_desc') sorted.sort((a, b) => (b.file_size || 0) - (a.file_size || 0));
+
+    currentSortedResults = sorted;
+    render(sorted);
+  }
+
+  function render(list) {
+    els.results.style.display = 'grid';
+    els.results.innerHTML = '';
+
+    if (list.length === 0) {
+      els.results.innerHTML = `
+        <div class="empty" style="grid-column:1/-1">
+          <div class="empty-icon">📭</div>
+          <div class="empty-text">No books found</div>
+          <div class="empty-hint">Try different keywords or check spelling</div>
+        </div>
+      `;
+      updatePagination();
+      return;
+    }
+
+    els.results.innerHTML = list.map((b, idx) => `
+      <div class="card">
+        <h3 class="name">${esc(b.file_name)}</h3>
+        <div class="meta">${mb(b.file_size)} MB • ${esc(b.mime_type || 'Unknown')}</div>
+        ${b.caption ? `<div class="cap">${esc(b.caption)}</div>` : ''}
+        <div class="row">
           <a class="btn tg" target="_blank" rel="noopener"
-             href="https://t.me/${TG_BOT}?start=filep_${encodeURIComponent(book._id)}"
+             href="https://t.me/${TG_BOT}?start=filep_${encodeURIComponent(b._id)}"
              onclick="handleTgLink(event)">
             📥 Get Book
           </a>
-          <button class="btn" onclick="copyLink('${esc(book._id)}')">Copy Link</button>
-          <button class="btn" onclick="closeModal()">Close</button>
+          <button class="btn" onclick="showDetails(${idx})">📋 Details</button>
+          <button class="btn" onclick="copyLink('${esc(b._id)}')">Copy Link</button>
         </div>
-      `;
-      
-      modal.classList.add('show');
-      
-      if (tg) {
-        tg.HapticFeedback?.impactOccurred('light');
-      }
+      </div>
+    `).join('');
+
+    updatePagination();
+  }
+
+  function updatePagination() {
+    // Remove existing nav if any
+    if (els.pageNav) els.pageNav.remove();
+
+    const nav = document.createElement('div');
+    nav.id = 'pageNav';
+    nav.style.display = 'flex';
+    nav.style.justifyContent = 'center';
+    nav.style.gap = '12px';
+    nav.style.marginTop = '20px';
+    nav.style.flexWrap = 'wrap';
+
+    // Page info
+    const pageInfo = document.createElement('span');
+    pageInfo.className = 'count';
+    if (searchResults.length === 0) {
+      pageInfo.textContent = 'Page 0 of 0';
+    } else {
+      pageInfo.textContent = `Page ${currentPage} ${totalPages > currentPage ? `of ${totalPages}+` : ''}`;
+    }
+    nav.appendChild(pageInfo);
+
+    // Prev button
+    if (currentPage > 1) {
+      const prevBtn = document.createElement('button');
+      prevBtn.className = 'btn';
+      prevBtn.textContent = '← Prev';
+      prevBtn.onclick = () => {
+        currentPage--;
+        doSearch(false);
+      };
+      nav.appendChild(prevBtn);
     }
 
-    function closeModal(event) {
-      if (!event || event.target === event.currentTarget) {
-        document.getElementById('detailModal').classList.remove('show');
-        
-        if (tg) {
-          tg.HapticFeedback?.impactOccurred('light');
-        }
-      }
+    // Next button
+    if (searchResults.length === PAGE_SIZE) {
+      const nextBtn = document.createElement('button');
+      nextBtn.className = 'btn';
+      nextBtn.textContent = 'Next →';
+      nextBtn.onclick = () => {
+        currentPage++;
+        doSearch(false);
+      };
+      nav.appendChild(nextBtn);
     }
 
-    // Event listeners
-    els.searchBtn.addEventListener('click', doSearch);
-    els.clear.addEventListener('click', clearSearch);
-    els.sort.addEventListener('change', sortAndRender);
-    
-    // Enter key to search
-    els.q.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') doSearch();
-    });
+    els.results.insertAdjacentElement('afterend', nav);
+    els.pageNav = nav;
+  }
 
-    // Close modal with Escape key
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') closeModal();
+  function handleTgLink(e) {
+    if (tg) tg.HapticFeedback?.impactOccurred('medium');
+  }
+
+  function clearSearch() {
+    els.q.value = '';
+    searchResults = [];
+    currentSortedResults = [];
+    currentPage = 1;
+    totalPages = 1;
+    els.results.style.display = 'none';
+    els.clear.style.display = 'none';
+    els.welcome.style.display = 'block';
+    els.count.textContent = '';
+    document.getElementById('pageNav')?.remove();
+    if (tg) {
+      tg.MainButton.hide();
+      tg.HapticFeedback?.impactOccurred('light');
+    }
+  }
+
+  function copyLink(id) {
+    const url = `https://t.me/${TG_BOT}?start=filep_${id}`;
+    navigator.clipboard.writeText(url).then(() => {
+      const btn = event.target;
+      const orig = btn.textContent;
+      btn.textContent = '✅ Copied!';
+      if (tg) tg.HapticFeedback?.notificationOccurred('success');
+      setTimeout(() => btn.textContent = orig, 2000);
+    }).catch(() => {
+      if (tg) tg.showAlert('Copy failed. Please try again.');
+      else alert('Copy failed');
     });
-  </script>
+  }
+
+  function showDetails(index) {
+    const book = currentSortedResults[index];
+    const modal = document.getElementById('detailModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalBody = document.getElementById('modalBody');
+    modalTitle.textContent = book.file_name || 'Book Details';
+    const details = [
+      { label: 'File Name', value: book.file_name || 'N/A' },
+      { label: 'File Size', value: `${mb(book.file_size)} MB (${(book.file_size || 0).toLocaleString()} bytes)` },
+      { label: 'MIME Type', value: book.mime_type || 'Unknown' },
+      { label: 'File ID', value: book._id || 'N/A' },
+      { label: 'Caption', value: book.caption || 'No caption available' }
+    ];
+    modalBody.innerHTML = `
+      ${details.map(d => `
+        <div class="detail-row">
+          <div class="detail-label">${d.label}</div>
+          <div class="detail-value">${esc(d.value)}</div>
+        </div>
+      `).join('')}
+      <div class="detail-actions">
+        <a class="btn tg" target="_blank" rel="noopener"
+           href="https://t.me/${TG_BOT}?start=filep_${encodeURIComponent(book._id)}"
+           onclick="handleTgLink(event)">
+          📥 Get Book
+        </a>
+        <button class="btn" onclick="copyLink('${esc(book._id)}')">Copy Link</button>
+        <button class="btn" onclick="closeModal()">Close</button>
+      </div>
+    `;
+    modal.classList.add('show');
+    if (tg) tg.HapticFeedback?.impactOccurred('light');
+  }
+
+  function closeModal(event) {
+    if (!event || event.target === event.currentTarget) {
+      document.getElementById('detailModal').classList.remove('show');
+      if (tg) tg.HapticFeedback?.impactOccurred('light');
+    }
+  }
+
+  // Event listeners
+  els.searchBtn.addEventListener('click', () => doSearch());
+  els.clear.addEventListener('click', clearSearch);
+  els.sort.addEventListener('change', sortAndRender);
+  els.q.addEventListener('keypress', (e) => { if (e.key === 'Enter') doSearch(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+</script>
 </body>
 </html>
