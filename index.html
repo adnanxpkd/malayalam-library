@@ -77,6 +77,7 @@
 
     /* Header */
     .header {
+      transition: transform 0.3s ease;
       position: sticky;
       top: 0;
       background: rgba(5, 8, 18, 0.85);
@@ -1001,6 +1002,17 @@
 
     updatePagination();
   }
+  let lastScroll = 0;
+    const header = document.querySelector('.header');
+    window.addEventListener('scroll', () => {
+    const curr = window.scrollY;
+    if (curr > lastScroll && curr > 60) {
+        header.style.transform = 'translateY(-100%)';
+    } else {
+        header.style.transform = 'translateY(0)';
+    }
+    lastScroll = curr;
+    });
 
   function updatePagination() {
     if (els.pageNav) els.pageNav.remove();
