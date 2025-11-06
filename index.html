@@ -3,80 +3,192 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>📚 Malayalam Books Library</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <title>📚 Malayalam Books — Supabase Library</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root { --bg:#0b0f14; --card:#121821; --muted:#94a3b8; --txt:#e5eefb; --ring:#334155; }
+    *{box-sizing:border-box} 
+    body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+         background:var(--bg);color:var(--txt);}
+    .wrap{max-width:1000px;margin:24px auto;padding:0 14px}
+    .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px}
+    .title{font-weight:700;font-size:24px;margin:0}
+    .stats{display:flex;gap:16px;font-size:14px;color:var(--muted)}
+    .stat-item{display:flex;align-items:center;gap:6px}
+    .stat-num{color:#60a5fa;font-weight:600}
+    .bar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+    input,select{background:var(--card);border:1px solid var(--ring);color:var(--txt);
+                 border-radius:12px;padding:12px;outline:none}
+    input{flex:1;min-width:220px}
+    select{min-width:140px}
+    .btn{padding:10px 14px;border-radius:12px;border:1px solid var(--ring);
+         background:#121b27;color:#e5eefb;cursor:pointer}
+    .grid{display:grid;grid-template-columns:1fr;gap:12px}
+    @media(min-width:720px){.grid{grid-template-columns:1fr 1fr}}
+    .card{background:var(--card);border:1px solid var(--ring);border-radius:16px;padding:14px}
+    .name{font-weight:600;margin:0 0 6px;word-break:break-word}
+    .meta{color:var(--muted);font-size:12px;margin-bottom:8px}
+    .cap{white-space:pre-wrap;color:#cbd5e1;font-size:13px}
+    .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px}
+    .tg{background:#1d4ed8;border:none}
+    .empty,.error,.loading{padding:24px;text-align:center;color:#cbd5e1}
+    .count{color:#a3b3c7;font-size:13px;margin-left:6px}
+  </style>
 </head>
 <body>
-  <div class="header">
-    <div class="container">
-      <div class="header-content">
-        <div class="logo">
-          <span class="logo-icon">📚</span>
-          <span class="logo-text">Malayalam Books</span>
+  <div class="wrap">
+    <div class="header">
+      <div class="title">📚 Malayalam Books</div>
+      <div class="stats">
+        <div class="stat-item">
+          <span>📖 Total Books:</span>
+          <span class="stat-num" id="totalBooks">—</span>
         </div>
-        <div class="stats">
-          <div class="stat-item">
-            <span>📖</span>
-            <span id="totalBooks" class="stat-value">0</span>
-            <span>Books</span>
-          </div>
-          <div class="stat-item">
-            <span>💾</span>
-            <span id="totalSize" class="stat-value">0 GB</span>
-          </div>
+        <div class="stat-item">
+          <span>💾 Library Size:</span>
+          <span class="stat-num" id="totalSize">—</span>
         </div>
       </div>
     </div>
+
+    <div class="bar">
+      <input id="q" placeholder="Search books…" />
+      <select id="sort">
+        <option value="relevance">Sort: Relevance</option>
+        <option value="name_asc">Name ↑</option>
+        <option value="name_desc">Name ↓</option>
+        <option value="size_desc">Size ↓</option>
+        <option value="size_asc">Size ↑</option>
+      </select>
+      <button id="clear" class="btn">Clear</button>
+      <span id="count" class="count"></span>
+    </div>
+
+    <div id="loading" class="loading">Loading books from Supabase…</div>
+    <div id="error" class="error" style="display:none">⚠️ Couldn't load Supabase data</div>
+    <div id="results" class="grid" style="display:none"></div>
   </div>
 
-  <div class="container">
-    <div class="search-section">
-      <div class="search-controls">
-        <div class="search-row">
-          <input id="searchInput" class="search-input" placeholder="🔍 Search books by name or description..." />
-          <select id="sortSelect">
-            <option value="relevance">Sort: Relevance</option>
-            <option value="name_asc">Name (A → Z)</option>
-            <option value="name_desc">Name (Z → A)</option>
-            <option value="size_desc">Size (Large → Small)</option>
-            <option value="size_asc">Size (Small → Large)</option>
-          </select>
-          <button id="clearBtn" class="btn">🔄 Clear</button>
-        </div>
-        <div class="filters">
-          <div class="filter-chip active" data-filter="all">All Books</div>
-          <div class="filter-chip" data-filter="pdf">📄 PDF</div>
-          <div class="filter-chip" data-filter="epub">📱 EPUB</div>
-          <div class="filter-chip" data-filter="large">💎 Large Files</div>
-        </div>
-      </div>
-    </div>
+  <script>
+    // ---- CONFIG ----
+    const PROJECT_REF = 'pracyjeiwgecdmmxgrew';
+    const SUPABASE_URL = `https://${PROJECT_REF}.supabase.co/rest/v1/books?select=*`;
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InByYWN5amVpd2dlY2RtbXhncmV3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIzNTg4OTAsImV4cCI6MjA3NzkzNDg5MH0.ms_j25yUwMXDtwGk9J-bRfHhEKbEE0M4yRBxnyIEZQ4';
+    const TG_BOT = 'alifdrivebot';
+    const ITEMS_PER_PAGE = 1000;
+    // ----------------
 
-    <div class="results-header" id="resultsHeader" style="display:none">
-      <div class="results-count" id="resultsCount">0 results</div>
-      <div class="view-toggle">
-        <button class="view-btn active" data-view="grid">⊞ Grid</button>
-        <button class="view-btn" data-view="list">☰ List</button>
-      </div>
-    </div>
+    let DATA = [], filtered = [];
+    const els = {
+      q: document.getElementById('q'),
+      sort: document.getElementById('sort'),
+      clear: document.getElementById('clear'),
+      loading: document.getElementById('loading'),
+      error: document.getElementById('error'),
+      results: document.getElementById('results'),
+      count: document.getElementById('count'),
+      totalBooks: document.getElementById('totalBooks'),
+      totalSize: document.getElementById('totalSize')
+    };
 
-    <div id="loadingEl" class="loading">
-      <div class="loading-spinner"></div>
-      <div>Loading Malayalam books collection...</div>
-    </div>
+    const mb = n => (n/1024/1024).toFixed(2)+' MB';
+    const gb = n => (n/1024/1024/1024).toFixed(2)+' GB';
+    const esc = s => (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 
-    <div id="errorEl" class="error" style="display:none">
-      <div style="font-size:48px;margin-bottom:16px">⚠️</div>
-      <div style="font-size:18px;font-weight:600;margin-bottom:8px">Unable to load data</div>
-      <div>Please check your connection and try again</div>
-      <button id="retryBtn" class="btn" style="margin-top:16px">↻ Retry</button>
-    </div>
+    async function loadData(){
+      try {
+        let allData = [];
+        let offset = 0;
+        let hasMore = true;
+        
+        els.loading.textContent = 'Loading books from Supabase (0)…';
+        
+        // Fetch all data with pagination
+        while(hasMore) {
+          const url = `${SUPABASE_URL}&limit=${ITEMS_PER_PAGE}&offset=${offset}`;
+          const res = await fetch(url, {
+            method:'GET',
+            headers:{
+              'apikey': SUPABASE_KEY,
+              'Authorization': `Bearer ${SUPABASE_KEY}`,
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+              'Prefer': 'count=exact'
+            }
+          });
+          
+          if(!res.ok){ console.error(await res.text()); throw new Error('Fetch failed'); }
+          
+          const batch = await res.json();
+          allData = allData.concat(batch);
+          
+          els.loading.textContent = `Loading books from Supabase (${allData.length.toLocaleString()})…`;
+          
+          // Check if there are more records
+          if(batch.length < ITEMS_PER_PAGE) {
+            hasMore = false;
+          } else {
+            offset += ITEMS_PER_PAGE;
+          }
+        }
+        
+        DATA = allData;
+        
+        // Update total stats
+        const totalSize = DATA.reduce((sum, b) => sum + (b.file_size || 0), 0);
+        els.totalBooks.textContent = DATA.length.toLocaleString();
+        els.totalSize.textContent = totalSize > 1024*1024*1024 ? gb(totalSize) : mb(totalSize);
+        
+        els.loading.style.display='none';
+        apply();
+      }catch(err){
+        console.error('Supabase error:', err);
+        els.loading.style.display='none';
+        els.error.style.display='block';
+      }
+    }
 
-    <div id="resultsGrid" class="grid grid-view" style="display:none"></div>
-    <div id="endMessage" class="empty" style="display:none;">✨ End of Library ✨</div>
-  </div>
+    function apply(){
+      const q = els.q.value.trim().toLowerCase();
+      const sort = els.sort.value;
+      filtered = DATA.filter(b =>
+        !q || 
+        (b.file_name && b.file_name.toLowerCase().includes(q)) || 
+        (b.caption && b.caption.toLowerCase().includes(q))
+      );
+      if(sort==='name_asc') filtered.sort((a,b)=>a.file_name.localeCompare(b.file_name));
+      else if(sort==='name_desc') filtered.sort((a,b)=>b.file_name.localeCompare(a.file_name));
+      else if(sort==='size_asc') filtered.sort((a,b)=>(a.file_size||0)-(b.file_size||0));
+      else if(sort==='size_desc') filtered.sort((a,b)=>(b.file_size||0)-(a.file_size||0));
+      render(filtered);
+    }
 
-  <script src="script.js"></script>
+    function render(list){
+      els.results.style.display='grid';
+      els.count.textContent = `${list.length.toLocaleString()} results`;
+      els.results.innerHTML = list.map(b=>`
+        <div class="card">
+          <h3 class="name">${esc(b.file_name)}</h3>
+          <div class="meta">${mb(b.file_size)} • ${esc(b.mime_type||'')}</div>
+          ${b.caption ? `<div class="cap">${esc(b.caption)}</div>` : ''}
+          <div class="row">
+            <a class="btn tg" target="_blank"
+               href="https://t.me/${TG_BOT}?start=filep_${encodeURIComponent(b._id)}">📥 Get on Telegram</a>
+            <button class="btn" onclick="copyDeepLink('${b._id}')">Copy link</button>
+          </div>
+        </div>`).join('') || '<div class="empty">No results</div>';
+    }
+
+    function copyDeepLink(id){
+      const url=`https://t.me/${TG_BOT}?start=filep_${id}`;
+      navigator.clipboard.writeText(url).then(()=>alert('Copied Telegram link ✅'));
+    }
+
+    els.q.addEventListener('input',apply);
+    els.sort.addEventListener('change',apply);
+    els.clear.addEventListener('click',()=>{els.q.value='';apply();});
+
+    loadData();
+  </script>
 </body>
 </html>
