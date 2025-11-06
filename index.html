@@ -13,26 +13,50 @@
     .wrap{max-width:1000px;margin:24px auto;padding:0 14px}
     .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px}
     .title{font-weight:700;font-size:24px;margin:0}
-    .stats{display:flex;gap:16px;font-size:14px;color:var(--muted)}
+    .stats{display:flex;gap:16px;font-size:14px;color:var(--muted);flex-wrap:wrap}
     .stat-item{display:flex;align-items:center;gap:6px}
     .stat-num{color:#60a5fa;font-weight:600}
     .bar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
     input,select{background:var(--card);border:1px solid var(--ring);color:var(--txt);
-                 border-radius:12px;padding:12px;outline:none}
+                 border-radius:12px;padding:12px;outline:none;font-size:14px}
     input{flex:1;min-width:220px}
+    input:focus{border-color:#3b82f6}
     select{min-width:140px}
     .btn{padding:10px 14px;border-radius:12px;border:1px solid var(--ring);
-         background:#121b27;color:#e5eefb;cursor:pointer}
+         background:#121b27;color:#e5eefb;cursor:pointer;font-size:14px;transition:all 0.2s}
+    .btn:hover{background:#1a2332;border-color:#475569}
+    .btn:disabled{opacity:0.5;cursor:not-allowed}
+    .btn-search{background:#1d4ed8;border:none;color:#fff}
+    .btn-search:hover{background:#1e40af}
     .grid{display:grid;grid-template-columns:1fr;gap:12px}
     @media(min-width:720px){.grid{grid-template-columns:1fr 1fr}}
-    .card{background:var(--card);border:1px solid var(--ring);border-radius:16px;padding:14px}
-    .name{font-weight:600;margin:0 0 6px;word-break:break-word}
+    .card{background:var(--card);border:1px solid var(--ring);border-radius:16px;padding:14px;
+          transition:border-color 0.2s}
+    .card:hover{border-color:#475569}
+    .name{font-weight:600;margin:0 0 6px;word-break:break-word;font-size:15px}
     .meta{color:var(--muted);font-size:12px;margin-bottom:8px}
-    .cap{white-space:pre-wrap;color:#cbd5e1;font-size:13px}
+    .cap{white-space:pre-wrap;color:#cbd5e1;font-size:13px;line-height:1.5;
+         display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
     .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px}
-    .tg{background:#1d4ed8;border:none}
-    .empty,.error,.loading{padding:24px;text-align:center;color:#cbd5e1}
-    .count{color:#a3b3c7;font-size:13px;margin-left:6px}
+    .tg{background:#1d4ed8;border:none;color:#fff;font-size:13px;padding:8px 12px}
+    .tg:hover{background:#1e40af}
+    .empty{padding:60px 24px;text-align:center;color:#cbd5e1}
+    .empty-icon{font-size:48px;margin-bottom:12px;opacity:0.5}
+    .empty-text{font-size:16px;margin-bottom:8px}
+    .empty-hint{font-size:13px;color:#64748b}
+    .loading{padding:40px 24px;text-align:center;color:#cbd5e1}
+    .error{padding:40px 24px;text-align:center;color:#cbd5e1}
+    .count{color:#a3b3c7;font-size:13px;margin-left:auto}
+    .spinner{display:inline-block;width:16px;height:16px;border:2px solid #334155;
+             border-top-color:#60a5fa;border-radius:50%;animation:spin 0.8s linear infinite;
+             margin-right:8px;vertical-align:middle}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .welcome{background:linear-gradient(135deg,#1e293b 0%,#0f172a 100%);
+             border:1px solid var(--ring);border-radius:16px;padding:40px 24px;
+             text-align:center;margin:40px 0}
+    .welcome-icon{font-size:64px;margin-bottom:16px}
+    .welcome-title{font-size:20px;font-weight:600;margin-bottom:12px}
+    .welcome-desc{color:var(--muted);font-size:14px;line-height:1.6;max-width:500px;margin:0 auto}
   </style>
 </head>
 <body>
@@ -42,17 +66,13 @@
       <div class="stats">
         <div class="stat-item">
           <span>📖 Total Books:</span>
-          <span class="stat-num" id="totalBooks">—</span>
-        </div>
-        <div class="stat-item">
-          <span>💾 Library Size:</span>
-          <span class="stat-num" id="totalSize">—</span>
+          <span class="stat-num" id="totalBooks">432,000+</span>
         </div>
       </div>
     </div>
 
     <div class="bar">
-      <input id="q" placeholder="Search books…" />
+      <input id="q" placeholder="Type to search books by name or caption…" />
       <select id="sort">
         <option value="relevance">Sort: Relevance</option>
         <option value="name_asc">Name ↑</option>
@@ -60,135 +80,187 @@
         <option value="size_desc">Size ↓</option>
         <option value="size_asc">Size ↑</option>
       </select>
-      <button id="clear" class="btn">Clear</button>
+      <button id="searchBtn" class="btn btn-search">
+        <span class="spinner" style="display:none"></span>
+        <span id="searchBtnText">Search</span>
+      </button>
+      <button id="clear" class="btn" style="display:none">Clear</button>
       <span id="count" class="count"></span>
     </div>
 
-    <div id="loading" class="loading">Loading books from Supabase…</div>
-    <div id="error" class="error" style="display:none">⚠️ Couldn't load Supabase data</div>
+    <div id="welcome" class="welcome">
+      <div class="welcome-icon">🔍</div>
+      <div class="welcome-title">Search 432,000+ Malayalam Books</div>
+      <div class="welcome-desc">
+        Type book name or keywords in the search box above and click Search to find books from our massive collection. 
+        Fast and efficient search powered by Supabase.
+      </div>
+    </div>
+
+    <div id="loading" class="loading" style="display:none">
+      <span class="spinner"></span>Searching books...
+    </div>
+    
+    <div id="error" class="error" style="display:none">
+      ⚠️ Search failed. Please try again.<br>
+      <button class="btn" onclick="doSearch()" style="margin-top:12px">Retry</button>
+    </div>
+    
     <div id="results" class="grid" style="display:none"></div>
   </div>
 
   <script>
-    // ---- CONFIG ----
     const PROJECT_REF = 'pracyjeiwgecdmmxgrew';
-    const SUPABASE_URL = `https://${PROJECT_REF}.supabase.co/rest/v1/books?select=*`;
+    const BASE_URL = `https://${PROJECT_REF}.supabase.co/rest/v1/books`;
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InByYWN5amVpd2dlY2RtbXhncmV3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIzNTg4OTAsImV4cCI6MjA3NzkzNDg5MH0.ms_j25yUwMXDtwGk9J-bRfHhEKbEE0M4yRBxnyIEZQ4';
     const TG_BOT = 'alifdrivebot';
-    const ITEMS_PER_PAGE = 1000;
-    // ----------------
 
-    let DATA = [], filtered = [];
+    let searchResults = [];
+
     const els = {
       q: document.getElementById('q'),
       sort: document.getElementById('sort'),
       clear: document.getElementById('clear'),
+      searchBtn: document.getElementById('searchBtn'),
+      searchBtnText: document.getElementById('searchBtnText'),
       loading: document.getElementById('loading'),
       error: document.getElementById('error'),
       results: document.getElementById('results'),
       count: document.getElementById('count'),
-      totalBooks: document.getElementById('totalBooks'),
-      totalSize: document.getElementById('totalSize')
+      welcome: document.getElementById('welcome')
     };
 
-    const mb = n => (n/1024/1024).toFixed(2)+' MB';
-    const gb = n => (n/1024/1024/1024).toFixed(2)+' GB';
-    const esc = s => (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+    const mb = n => (n/1024/1024).toFixed(2);
+    const esc = s => {
+      const div = document.createElement('div');
+      div.textContent = s || '';
+      return div.innerHTML;
+    };
 
-    async function loadData(){
+    async function doSearch() {
+      const query = els.q.value.trim();
+      
+      if (!query || query.length < 2) {
+        alert('Please enter at least 2 characters to search');
+        return;
+      }
+
+      els.welcome.style.display = 'none';
+      els.results.style.display = 'none';
+      els.error.style.display = 'none';
+      els.loading.style.display = 'block';
+      els.searchBtn.disabled = true;
+      els.searchBtn.querySelector('.spinner').style.display = 'inline-block';
+      els.searchBtnText.textContent = 'Searching...';
+
       try {
-        let allData = [];
-        let offset = 0;
-        let hasMore = true;
+        // Search using Supabase's text search on file_name and caption
+        const searchPattern = `%${query}%`;
+        const url = `${BASE_URL}?or=(file_name.ilike.${encodeURIComponent(searchPattern)},caption.ilike.${encodeURIComponent(searchPattern)})&limit=1000`;
         
-        els.loading.textContent = 'Loading books from Supabase (0)…';
-        
-        // Fetch all data with pagination
-        while(hasMore) {
-          const url = `${SUPABASE_URL}&limit=${ITEMS_PER_PAGE}&offset=${offset}`;
-          const res = await fetch(url, {
-            method:'GET',
-            headers:{
-              'apikey': SUPABASE_KEY,
-              'Authorization': `Bearer ${SUPABASE_KEY}`,
-              'Accept': 'application/json',
-              'Content-Type': 'application/json',
-              'Prefer': 'count=exact'
-            }
-          });
-          
-          if(!res.ok){ console.error(await res.text()); throw new Error('Fetch failed'); }
-          
-          const batch = await res.json();
-          allData = allData.concat(batch);
-          
-          els.loading.textContent = `Loading books from Supabase (${allData.length.toLocaleString()})…`;
-          
-          // Check if there are more records
-          if(batch.length < ITEMS_PER_PAGE) {
-            hasMore = false;
-          } else {
-            offset += ITEMS_PER_PAGE;
+        const res = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+            'Content-Type': 'application/json'
           }
-        }
+        });
         
-        DATA = allData;
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         
-        // Update total stats
-        const totalSize = DATA.reduce((sum, b) => sum + (b.file_size || 0), 0);
-        els.totalBooks.textContent = DATA.length.toLocaleString();
-        els.totalSize.textContent = totalSize > 1024*1024*1024 ? gb(totalSize) : mb(totalSize);
+        searchResults = await res.json();
         
-        els.loading.style.display='none';
-        apply();
-      }catch(err){
-        console.error('Supabase error:', err);
-        els.loading.style.display='none';
-        els.error.style.display='block';
+        els.loading.style.display = 'none';
+        els.clear.style.display = 'inline-block';
+        sortAndRender();
+        
+      } catch(err) {
+        console.error('Search error:', err);
+        els.loading.style.display = 'none';
+        els.error.style.display = 'block';
+      } finally {
+        els.searchBtn.disabled = false;
+        els.searchBtn.querySelector('.spinner').style.display = 'none';
+        els.searchBtnText.textContent = 'Search';
       }
     }
 
-    function apply(){
-      const q = els.q.value.trim().toLowerCase();
+    function sortAndRender() {
       const sort = els.sort.value;
-      filtered = DATA.filter(b =>
-        !q || 
-        (b.file_name && b.file_name.toLowerCase().includes(q)) || 
-        (b.caption && b.caption.toLowerCase().includes(q))
-      );
-      if(sort==='name_asc') filtered.sort((a,b)=>a.file_name.localeCompare(b.file_name));
-      else if(sort==='name_desc') filtered.sort((a,b)=>b.file_name.localeCompare(a.file_name));
-      else if(sort==='size_asc') filtered.sort((a,b)=>(a.file_size||0)-(b.file_size||0));
-      else if(sort==='size_desc') filtered.sort((a,b)=>(b.file_size||0)-(a.file_size||0));
-      render(filtered);
+      let sorted = [...searchResults];
+      
+      if(sort === 'name_asc') sorted.sort((a,b) => (a.file_name||'').localeCompare(b.file_name||''));
+      else if(sort === 'name_desc') sorted.sort((a,b) => (b.file_name||'').localeCompare(a.file_name||''));
+      else if(sort === 'size_asc') sorted.sort((a,b) => (a.file_size||0) - (b.file_size||0));
+      else if(sort === 'size_desc') sorted.sort((a,b) => (b.file_size||0) - (a.file_size||0));
+      
+      render(sorted);
     }
 
-    function render(list){
-      els.results.style.display='grid';
+    function render(list) {
+      els.results.style.display = 'grid';
       els.count.textContent = `${list.length.toLocaleString()} results`;
-      els.results.innerHTML = list.map(b=>`
+      
+      if (list.length === 0) {
+        els.results.innerHTML = `
+          <div class="empty" style="grid-column:1/-1">
+            <div class="empty-icon">📭</div>
+            <div class="empty-text">No books found</div>
+            <div class="empty-hint">Try different keywords or check spelling</div>
+          </div>
+        `;
+        return;
+      }
+      
+      if (list.length === 1000) {
+        els.count.textContent = `1,000+ results (showing first 1,000)`;
+      }
+      
+      els.results.innerHTML = list.map(b => `
         <div class="card">
           <h3 class="name">${esc(b.file_name)}</h3>
-          <div class="meta">${mb(b.file_size)} • ${esc(b.mime_type||'')}</div>
+          <div class="meta">${mb(b.file_size)} MB • ${esc(b.mime_type || 'Unknown')}</div>
           ${b.caption ? `<div class="cap">${esc(b.caption)}</div>` : ''}
           <div class="row">
-            <a class="btn tg" target="_blank"
-               href="https://t.me/${TG_BOT}?start=filep_${encodeURIComponent(b._id)}">📥 Get on Telegram</a>
-            <button class="btn" onclick="copyDeepLink('${b._id}')">Copy link</button>
+            <a class="btn tg" target="_blank" rel="noopener"
+               href="https://t.me/${TG_BOT}?start=filep_${encodeURIComponent(b._id)}">
+              📥 Telegram
+            </a>
+            <button class="btn" onclick="copyLink('${esc(b._id)}')">Copy Link</button>
           </div>
-        </div>`).join('') || '<div class="empty">No results</div>';
+        </div>
+      `).join('');
     }
 
-    function copyDeepLink(id){
-      const url=`https://t.me/${TG_BOT}?start=filep_${id}`;
-      navigator.clipboard.writeText(url).then(()=>alert('Copied Telegram link ✅'));
+    function clearSearch() {
+      els.q.value = '';
+      searchResults = [];
+      els.results.style.display = 'none';
+      els.clear.style.display = 'none';
+      els.welcome.style.display = 'block';
+      els.count.textContent = '';
     }
 
-    els.q.addEventListener('input',apply);
-    els.sort.addEventListener('change',apply);
-    els.clear.addEventListener('click',()=>{els.q.value='';apply();});
+    function copyLink(id) {
+      const url = `https://t.me/${TG_BOT}?start=filep_${id}`;
+      navigator.clipboard.writeText(url).then(() => {
+        const btn = event.target;
+        const orig = btn.textContent;
+        btn.textContent = '✅ Copied!';
+        setTimeout(() => btn.textContent = orig, 2000);
+      }).catch(() => alert('Copy failed'));
+    }
 
-    loadData();
+    // Event listeners
+    els.searchBtn.addEventListener('click', doSearch);
+    els.clear.addEventListener('click', clearSearch);
+    els.sort.addEventListener('change', sortAndRender);
+    
+    // Enter key to search
+    els.q.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') doSearch();
+    });
   </script>
 </body>
 </html>
